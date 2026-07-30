@@ -71,7 +71,7 @@ jobs:
           siege --file ./mosaic/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          cat results.json | jq '{"name": "titiler-pgstac elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "titiler-pgstac concurrency", "unit": "Count", "value": .concurrency}, {"name": "titiler-pgstac response_time", "unit": "s", "value": .response_time}, {"name": "titiler-pgstac transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
+          cat results.json | jq '{"service": "titiler-pgstac", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "titiler-pgstac", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "titiler-pgstac", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "titiler-pgstac", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
         env:
           PORT: 8080
           HOST: 127.0.0.1
@@ -81,10 +81,10 @@ jobs:
           siege --file ./mosaic/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          cat results.json | jq '{"name": "titiler-stacapi elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "titiler-stacapi concurrency", "unit": "Count", "value": .concurrency}, {"name": "titiler-stacapi response_time", "unit": "s", "value": .response_time}, {"name": "titiler-stacapi transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"service": "titiler-stacapi", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "titiler-stacapi", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "titiler-stacapi", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "titiler-stacapi", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
           PORT: 8081
-          HOST: 127.0.0.1          
+          HOST: 127.0.0.1
 
       - name: Run siege (async-titiler-stacapi)
         run: |
@@ -92,10 +92,10 @@ jobs:
           echo "Benchmark Results"
           cat results.json | jq
           echo "Parse Results"
-          cat results.json | jq '{"name": "async-titiler-stacapi elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "async-titiler-stacapi concurrency", "unit": "Count", "value": .concurrency}, {"name": "async-titiler-stacapi response_time", "unit": "s", "value": .response_time}, {"name": "async-titiler-stacapi transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"service": "async-titiler-stacapi", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "async-titiler-stacapi", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "async-titiler-stacapi", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "async-titiler-stacapi", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
           PORT: 8082
-          HOST: 127.0.0.1          
+          HOST: 127.0.0.1
 
       - name: Merge Outputs
         run: |
