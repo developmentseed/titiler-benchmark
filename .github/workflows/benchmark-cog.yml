@@ -1,4 +1,4 @@
-name: benchmark-mosaic
+name: benchmark-cog
 
 # On every pull request, but only on push to main
 on:
