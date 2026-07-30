@@ -221,3 +221,9 @@ __marimo__/
 
 .superpowers/
 .worktrees/
+
+# Generated benchmark artifacts (published to gh-benchmarks, not main)
+/benchmark.json
+/output.json
+/results.json
+/siege_results.json
