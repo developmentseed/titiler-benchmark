@@ -1,0 +1,16 @@
+[project]
+name = "titiler-benchmark"
+version = "0.1.0"
+description = "Benchmark titiler"
+readme = "README.md"
+authors = [
+  { name = "Vincent Sarago", email = "vincent@developmentseed.org" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "pypgstac==0.9.11",
+    "psycopg[pool]",
+    "pytest",
+    "pytest-benchmark",
+    "httpx2",
+]
