@@ -58,7 +58,7 @@ jobs:
       - name: Run Benchmark
         run: |
           uv run pytest ./mosaic/benchmarks.py --benchmark-sort name --benchmark-columns 'min, max, mean, median' --benchmark-json output.json
-          cat output.json | jq '.benchmarks[] | {"name": .name, "group": .group, "stats": .stats}' | jq '[inputs]' > benchmark.json
+          cat output.json | jq '{commit_info: .commit_info, datetime: .datetime, benchmarks: [.benchmarks[] | {name: .name, group: .group, stats: .stats}]}' > benchmark.json
       
       - name: install siege
         run: |
