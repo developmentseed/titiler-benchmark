@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>titiler-benchmark report</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --border: rgba(11,11,11,0.10);
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #e87ba4;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --border: rgba(255,255,255,0.10);
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+    --s5: #d55181;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text-primary);
+  background: var(--page);
+  margin: 0;
+  padding: 24px;
+}
+.wrap { max-width: 900px; margin: 0 auto; }
+.report-head { margin-bottom: 20px; }
+.report-head h1 { font-size: 20px; margin: 0 0 4px; }
+.report-head .meta { color: var(--text-secondary); font-size: 13px; }
+.section { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.section h2 { font-size: 15px; margin: 0 0 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); }
+.placeholder { color: var(--muted); font-size: 13px; }
+.legend { display: flex; gap: 16px; margin-bottom: 12px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.s1 { background: var(--s1); }
+.s2 { background: var(--s2); }
+.s3 { background: var(--s3); }
+.s4 { background: var(--s4); }
+.s5 { background: var(--s5); }
+.chart { display: flex; align-items: flex-end; gap: 22px; height: 160px; padding: 24px 4px 0; border-bottom: 1px solid var(--grid); overflow-x: auto; }
+.group { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 40px; height: 100%; justify-content: flex-end; }
+.bars { display: flex; align-items: flex-end; gap: 2px; height: 100%; }
+.bar { width: 20px; border-radius: 4px 4px 0 0; position: relative; }
+.bar .val { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-secondary); white-space: nowrap; }
+.group .label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 16px; }
+th, td { text-align: right; padding: 8px 10px; }
+th:first-child, td:first-child { text-align: left; color: var(--text-secondary); }
+th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid var(--grid); }
+td { font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--grid); }
+tr:last-child td { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="report-head">
+    <h1>titiler-benchmark</h1>
+    <div class="meta" id="meta">Loading&hellip;</div>
+  </div>
+
+  <div class="section">
+    <h2>COG &mdash; single tile latency</h2>
+    <div id="cog-content"><p class="placeholder">Loading&hellip;</p></div>
+  </div>
+
+  <div class="section">
+    <h2>Mosaic &mdash; single tile latency</h2>
+    <div id="mosaic-content"><p class="placeholder">Loading&hellip;</p></div>
+  </div>
+</div>
+
+<script>
+const PALETTE_CLASSES = ['s1', 's2', 's3', 's4', 's5'];
+
+const METRIC_LABELS = {
+  elapsed_time: 'Elapsed time (s)',
+  response_time: 'Response time (s)',
+  transaction_rate: 'Transaction rate (trans/sec)',
+  concurrency: 'Concurrency',
+};
+
+async function fetchJSON(path) {
+  try {
+    const res = await fetch(path, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+function firstSeen(items, key) {
+  const seen = [];
+  for (const item of items) {
+    if (!seen.includes(item[key])) seen.push(item[key]);
+  }
+  return seen;
+}
+
+function extractZoom(group) {
+  const m = group.match(/Zoom (\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function renderBarChart(benchmarks) {
+  const services = firstSeen(benchmarks, 'name');
+  const groups = [...new Set(benchmarks.map((b) => b.group))].sort(
+    (a, b) => extractZoom(a) - extractZoom(b)
+  );
+  const maxMean = Math.max(...benchmarks.map((b) => b.stats.mean), 0.0001);
+
+  const legend = services
+    .map((s, i) => `<span><span class="swatch ${PALETTE_CLASSES[i % PALETTE_CLASSES.length]}"></span>${s}</span>`)
+    .join('');
+
+  const groupsHtml = groups
+    .map((g) => {
+      const bars = services
+        .map((s, i) => {
+          const b = benchmarks.find((x) => x.group === g && x.name === s);
+          if (!b) return '';
+          const pct = Math.round((b.stats.mean / maxMean) * 100);
+          return `<div class="bar ${PALETTE_CLASSES[i % PALETTE_CLASSES.length]}" style="height:${pct}%"><span class="val">${b.stats.mean.toFixed(2)}s</span></div>`;
+        })
+        .join('');
+      return `<div class="group"><div class="bars">${bars}</div><div class="label">${g}</div></div>`;
+    })
+    .join('');
+
+  return `<div class="legend">${legend}</div><div class="chart">${groupsHtml}</div>`;
+}
+
+function renderSiegeTable(siege) {
+  const services = firstSeen(siege, 'service');
+  const metrics = firstSeen(siege, 'name');
+
+  const header = `<tr><th>siege metric</th>${services.map((s) => `<th>${s}</th>`).join('')}</tr>`;
+  const rows = metrics
+    .map((m) => {
+      const cells = services
+        .map((s) => {
+          const row = siege.find((r) => r.service === s && r.name === m);
+          return `<td>${row ? row.value : '&ndash;'}</td>`;
+        })
+        .join('');
+      return `<tr><td>${METRIC_LABELS[m] || m}</td>${cells}</tr>`;
+    })
+    .join('');
+
+  return `<table><thead>${header}</thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderSection(containerId, benchmarks, siege) {
+  const el = document.getElementById(containerId);
+  if (!benchmarks && !siege) {
+    el.innerHTML = '<p class="placeholder">No data yet.</p>';
+    return;
+  }
+  let html = '';
+  html += benchmarks ? renderBarChart(benchmarks) : '<p class="placeholder">No latency data yet.</p>';
+  html += siege ? renderSiegeTable(siege) : '<p class="placeholder">No siege data yet.</p>';
+  el.innerHTML = html;
+}
+
+async function main() {
+  const [cogBench, cogSiege, mosaicBench, mosaicSiege] = await Promise.all([
+    fetchJSON('cog/benchmark.json'),
+    fetchJSON('cog/siege_results.json'),
+    fetchJSON('mosaic/benchmark.json'),
+    fetchJSON('mosaic/siege_results.json'),
+  ]);
+
+  const meta = document.getElementById('meta');
+  const info = cogBench || mosaicBench;
+  if (info) {
+    const shortSha = info.commit_info.id.slice(0, 7);
+    const date = new Date(info.datetime).toLocaleString();
+    meta.textContent = `Commit ${shortSha} · ${date}`;
+  } else {
+    meta.textContent = 'No benchmark data yet.';
+  }
+
+  renderSection('cog-content', cogBench ? cogBench.benchmarks : null, cogSiege);
+  renderSection('mosaic-content', mosaicBench ? mosaicBench.benchmarks : null, mosaicSiege);
+}
+
+main();
+</script>
+</body>
+</html>
