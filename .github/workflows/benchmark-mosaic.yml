@@ -17,7 +17,6 @@ env:
 
 jobs:
   benchmark-mosaic:
-    if: github.repository == 'developmentseed/titiler'
     runs-on: ubuntu-latest
     permissions:
       contents: write # Push benchmark results to gh-benchmarks branch
@@ -110,6 +109,7 @@ jobs:
         run: docker compose stop
 
       # - name: Check and Store benchmark result
+      #   if: github.repository == 'developmentseed/titiler-benchmark'
       #   uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1
       #   with:
       #     name: TiTiler performance Benchmarks
