@@ -57,7 +57,7 @@ jobs:
           siege --file ./cog/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          cat results.json | jq '{"name": "titiler elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "titiler concurrency", "unit": "Count", "value": .concurrency}, {"name": "titiler response_time", "unit": "s", "value": .response_time}, {"name": "titiler transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
+          cat results.json | jq '{"service": "titiler", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "titiler", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "titiler", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "titiler", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
         env:
           URLPATH: cog/tiles/WebMercatorQuad/
           PORT: 8080
@@ -68,11 +68,11 @@ jobs:
           siege --file ./cog/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          cat results.json | jq '{"name": "async-titiler elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "async-titiler concurrency", "unit": "Count", "value": .concurrency}, {"name": "async-titiler response_time", "unit": "s", "value": .response_time}, {"name": "async-titiler transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"service": "async-titiler", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "async-titiler", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "async-titiler", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "async-titiler", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
           URLPATH: geotiff/tiles/WebMercatorQuad/
           PORT: 8081
-          HOST: 127.0.0.1          
+          HOST: 127.0.0.1
 
       - name: Merge Outputs
         run: |
