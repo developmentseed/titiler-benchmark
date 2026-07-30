@@ -94,12 +94,28 @@ jobs:
 
       - name: Push results to gh-benchmarks
         if: github.event_name == 'push'
-        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
-        with:
-          repository: gh-benchmarks
-          branch: gh-benchmarks
-          commit_message: "chore: update cog benchmark results"
-          file_pattern: "cog/*.json"
+        working-directory: gh-benchmarks
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cog/benchmark.json cog/siege_results.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: update cog benchmark results"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:gh-benchmarks; then
+              echo "Pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt), fetching and rebasing before retry..."
+            sleep $((RANDOM % 5 + 1))
+            git fetch origin gh-benchmarks
+            git rebase origin/gh-benchmarks
+          done
+          echo "Failed to push to gh-benchmarks after 5 attempts"
+          exit 1
 
       - name: Stop services
         if: always()
