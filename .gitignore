@@ -220,3 +220,4 @@ __marimo__/
 .pgdata
 
 .superpowers/
+.worktrees/
