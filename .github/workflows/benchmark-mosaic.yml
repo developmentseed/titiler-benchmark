@@ -12,6 +12,10 @@ on:
       - '.github/workflows/benchmark-mosaic.yml'
 
   pull_request:
+
+concurrency:
+  group: benchmark-mosaic-${{ github.ref }}
+
 env:
   LATEST_PY_VERSION: '3.14'
 
@@ -100,6 +104,45 @@ jobs:
       - name: Merge Outputs
         run: |
           cat output.json | jq '[inputs]' > siege_results.json
+
+      - name: Checkout gh-benchmarks
+        if: github.event_name == 'push'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-benchmarks
+          path: gh-benchmarks
+
+      - name: Copy results into gh-benchmarks/mosaic
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p gh-benchmarks/mosaic
+          cp benchmark.json gh-benchmarks/mosaic/benchmark.json
+          cp siege_results.json gh-benchmarks/mosaic/siege_results.json
+
+      - name: Push results to gh-benchmarks
+        if: github.event_name == 'push'
+        working-directory: gh-benchmarks
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mosaic/benchmark.json mosaic/siege_results.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: update mosaic benchmark results"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:gh-benchmarks; then
+              echo "Pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt), fetching and rebasing before retry..."
+            sleep $((RANDOM % 5 + 1))
+            git fetch origin gh-benchmarks
+            git rebase origin/gh-benchmarks
+          done
+          echo "Failed to push to gh-benchmarks after 5 attempts"
+          exit 1
 
       - name: Stop services
         if: always()
