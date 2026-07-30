@@ -4,7 +4,7 @@
 
 **Goal:** Persist the cog and mosaic workflows' benchmark JSON to the existing `gh-benchmarks` branch on every push to `main`, and serve a static, client-side-rendered HTML dashboard from that branch (via GitHub Pages).
 
-**Architecture:** Both workflows already produce `benchmark.json` (pytest-benchmark stats) and `siege_results.json` (load-test stats). Two small jq shape fixes make that data self-describing (service name as its own field; commit/datetime preserved). New workflow steps checkout `gh-benchmarks` into a subdirectory, copy the job's two JSON files into `cog/` or `mosaic/`, and push via `git-auto-commit-action` — gated to `push` events only. A single static `index.html`, committed once to `gh-benchmarks`, fetches those four JSON files client-side and renders grouped bar charts + tables. No build step, no server-side templating, no history — always shows the latest run.
+**Architecture:** Both workflows already produce `benchmark.json` (pytest-benchmark stats) and `siege_results.json` (load-test stats). Two small jq shape fixes make that data self-describing (service name as its own field; commit/datetime preserved). New workflow steps checkout `gh-benchmarks` into a subdirectory, copy the job's two JSON files into `cog/` or `mosaic/`, and push with a hand-rolled fetch+rebase+retry script (plus a per-workflow `concurrency:` group) — gated to `push` events only. A single static `index.html`, committed once to `gh-benchmarks`, fetches those four JSON files client-side and renders grouped bar charts + tables. No build step, no server-side templating, no history — always shows the latest run.
 
 **Tech Stack:** GitHub Actions (YAML), jq, plain HTML/CSS/JS (no framework), git.
 
@@ -981,8 +981,9 @@ git -C .worktrees/gh-benchmarks log origin/gh-benchmarks --oneline -5
 git -C .worktrees/gh-benchmarks show origin/gh-benchmarks:cog/benchmark.json | jq 'keys'
 ```
 
-Expected: recent commits from `stefanzweifel/git-auto-commit-action`, and
-`benchmark.json` with top-level keys `commit_info`, `datetime`, `benchmarks`.
+Expected: recent commits authored by `github-actions[bot]` (from the
+retry-loop push script), and `benchmark.json` with top-level keys
+`commit_info`, `datetime`, `benchmarks`.
 
 Then open the Pages URL and confirm the report renders real data for both
 sections.
