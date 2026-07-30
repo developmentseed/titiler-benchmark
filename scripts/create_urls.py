@@ -24,6 +24,9 @@ from typing import Dict, List
 
 parser = argparse.ArgumentParser(description="Create a urls.txt for siege.")
 parser.add_argument(
+    "--minzoom", type=int, default=0, help="Minimum zoom level, inclusive."
+)
+parser.add_argument(
     "--maxzoom", type=int, default=19, help="Maximum zoom level, inclusive."
 )
 parser.add_argument(
@@ -48,7 +51,7 @@ if args.bbox:
     bounds = [min_x, max_y, max_x, min_y]  # invert Y
 
 # one week of anonymized tile edge request logs from openstreetmap.org
-FILENAME = "tiles-2021-08-08.txt.xz"
+FILENAME = "tiles-2026-07-26.txt.xz"
 OUTPUT_ROWS = 10000
 
 if not os.path.isfile(FILENAME):
@@ -61,6 +64,7 @@ if not os.path.isfile(FILENAME):
 random.seed(3857)
 
 maxzoom = args.maxzoom
+minzoom = args.minzoom
 distribution = [
     2,
     2,
@@ -88,7 +92,7 @@ total_weight = 0
 totals: Dict[int, int] = {}
 ranges: Dict[int, List[int]] = {}
 tiles: Dict[int, List[str]] = {}
-for zoom in range(maxzoom + 1):
+for zoom in range(minzoom, maxzoom + 1):
     total_weight = total_weight + distribution[zoom]
     totals[zoom] = 0
     ranges[zoom] = []
@@ -103,7 +107,7 @@ with lzma.open(FILENAME, "rt") as fin:
         y = int(split[2])
         count = int(row[1])
 
-        if z > maxzoom:
+        if z > maxzoom or z < minzoom:
             continue
 
         if bounds:
@@ -128,7 +132,7 @@ with open("urls.txt", "w") as fin:
     fin.write("PORT=8081\n")
     fin.write("PATH=\n")
     fin.write("EXT=pbf\n")
-    for zoom in range(0, maxzoom + 1):
+    for zoom in range(minzoom, maxzoom + 1):
         rows_for_zoom = int(OUTPUT_ROWS * distribution[zoom] / total_weight)
         for _sample in range(rows_for_zoom):
             rand = random.randrange(totals[zoom])

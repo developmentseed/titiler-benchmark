@@ -7,7 +7,7 @@ on:
     - main
     paths:
       - 'mosaic/**'
-      - 'docker-compose.yml'
+      - 'docker-compose.mosaic.yml'
       - 'pyproject.toml'
       - '.github/workflows/benchmark-mosaic.yml'
 
@@ -39,7 +39,7 @@ jobs:
           uv pip install pypgstac==${{ env.PGSTAC_VERSION }}
 
       - name: Launch services
-        run: docker compose up -d
+        run: docker compose -f docker-compose.mosaic.yml up -d
         env:
           PGSTAC_VERSION: ${{ env.PGSTAC_VERSION }}
 
@@ -58,7 +58,7 @@ jobs:
 
       - name: Run Benchmark
         run: |
-          uv run pytest ./mosaic/benchmarks.py --benchmark-only --benchmark-columns 'min, max, mean, median' --benchmark-json output.json
+          uv run pytest ./mosaic/benchmarks.py --benchmark-sort name --benchmark-columns 'min, max, mean, median' --benchmark-json output.json
 
       - name: install siege
         run: |
@@ -106,24 +106,24 @@ jobs:
 
       - name: Stop services
         if: always()
-        run: docker compose stop
+        run: docker compose -f docker-compose.mosaic.yml stop
 
-      - name: Check and Store benchmark result
-        if: github.repository == 'developmentseed/titiler-benchmark'
-        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1
-        with:
-          name: TiTiler performance Benchmarks
-          tool: 'customSmallerIsBetter'
-          output-file-path: benchmark.json
-          alert-threshold: '130%'
-          # Only comment on alert when we can actually write to the repository.
-          # Pull requests from a fork get a read-only GITHUB_TOKEN, so posting the
-          # alert comment fails with "Resource not accessible by integration" and
-          # takes the whole job down, despite `fail-on-alert: false`.
-          comment-on-alert: ${{ github.event.pull_request.head.repo.fork != true }}
-          fail-on-alert: false
-          # GitHub API token to make a commit comment
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          gh-pages-branch: 'gh-benchmarks'
-          # Make a commit only if main
-          auto-push: ${{ github.ref == 'refs/heads/main' }}
+      # - name: Check and Store benchmark result
+      #   if: github.repository == 'developmentseed/titiler-benchmark'
+      #   uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1
+      #   with:
+      #     name: TiTiler Mosaic performance Benchmarks
+      #     tool: 'customSmallerIsBetter'
+      #     output-file-path: benchmark.json
+      #     alert-threshold: '130%'
+      #     # Only comment on alert when we can actually write to the repository.
+      #     # Pull requests from a fork get a read-only GITHUB_TOKEN, so posting the
+      #     # alert comment fails with "Resource not accessible by integration" and
+      #     # takes the whole job down, despite `fail-on-alert: false`.
+      #     comment-on-alert: ${{ github.event.pull_request.head.repo.fork != true }}
+      #     fail-on-alert: false
+      #     # GitHub API token to make a commit comment
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     gh-pages-branch: 'gh-benchmarks'
+      #     # Make a commit only if main
+      #     auto-push: ${{ github.ref == 'refs/heads/main' }}

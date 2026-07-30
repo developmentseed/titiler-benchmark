@@ -1,0 +1,107 @@
+name: benchmark-mosaic
+
+# On every pull request, but only on push to main
+on:
+  push:
+    branches:
+    - main
+    paths:
+      - 'cog/**'
+      - 'docker-compose.yml'
+      - 'pyproject.toml'
+      - '.github/workflows/benchmark-cog.yml'
+
+  pull_request:
+env:
+  LATEST_PY_VERSION: '3.14'
+
+jobs:
+  benchmark-mosaic:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Push benchmark results to gh-benchmarks branch
+      pull-requests: write # Leave PR comments when benchmark regressions exceed alert threshold
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.9.*" 
+          enable-cache: false
+          python-version: ${{ env.LATEST_PY_VERSION }}
+     
+      - name: Install dependencies
+        run: |
+          uv sync
+
+      - name: Launch services
+        run: docker compose up -d
+
+      - name: Sleep for 10 seconds
+        run: sleep 10s
+        shell: bash
+
+      - name: Run Benchmark
+        run: |
+          uv run pytest ./cog/benchmarks.py --benchmark-sort name --benchmark-columns 'min, max, mean, median' --benchmark-json output.json
+
+      - name: install siege
+        run: |
+          sudo apt update
+          sudo apt install --yes siege jq
+          siege -C
+
+      - name: Run siege (titiler)
+        run: |
+          siege --file ./cog/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
+          echo "Benchmark Results"
+          cat results.json | jq
+          echo "Parse Results"
+          cat results.json | jq '{"name": "titiler elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "titiler concurrency", "unit": "Count", "value": .concurrency}, {"name": "titiler response_time", "unit": "s", "value": .response_time}, {"name": "titiler transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+        env:
+          URLPATH: cog/tiles/WebMercatorQuad/
+          PORT: 8080
+          HOST: 127.0.0.1
+
+      - name: Run siege (async-titiler)
+        run: |
+          siege --file ./cog/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
+          echo "Benchmark Results"
+          cat results.json | jq
+          echo "Parse Results"
+          cat results.json | jq '{"name": "async-titiler elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "async-titiler concurrency", "unit": "Count", "value": .concurrency}, {"name": "async-titiler response_time", "unit": "s", "value": .response_time}, {"name": "async-titiler transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+        env:
+          URLPATH: geotiff/tiles/WebMercatorQuad/
+          PORT: 8081
+          HOST: 127.0.0.1          
+
+      - name: Merge Outputs
+        run: |
+          cat output.json | jq '[inputs]' > benchmark.json
+          cat benchmark.json | jq
+
+      - name: Stop services
+        if: always()
+        run: docker compose stop
+
+      # - name: Check and Store benchmark result
+      #   if: github.repository == 'developmentseed/titiler-benchmark'
+      #   uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1
+      #   with:
+      #     name: TiTiler performance Benchmarks
+      #     tool: 'customSmallerIsBetter'
+      #     output-file-path: benchmark.json
+      #     alert-threshold: '130%'
+      #     # Only comment on alert when we can actually write to the repository.
+      #     # Pull requests from a fork get a read-only GITHUB_TOKEN, so posting the
+      #     # alert comment fails with "Resource not accessible by integration" and
+      #     # takes the whole job down, despite `fail-on-alert: false`.
+      #     comment-on-alert: ${{ github.event.pull_request.head.repo.fork != true }}
+      #     fail-on-alert: false
+      #     # GitHub API token to make a commit comment
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     gh-pages-branch: 'gh-benchmarks'
+      #     # Make a commit only if main
+      #     auto-push: ${{ github.ref == 'refs/heads/main' }}
