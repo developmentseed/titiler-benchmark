@@ -78,6 +78,29 @@ jobs:
         run: |
           cat output.json | jq '[inputs]' > siege_results.json
 
+      - name: Checkout gh-benchmarks
+        if: github.event_name == 'push'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-benchmarks
+          path: gh-benchmarks
+
+      - name: Copy results into gh-benchmarks/cog
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p gh-benchmarks/cog
+          cp benchmark.json gh-benchmarks/cog/benchmark.json
+          cp siege_results.json gh-benchmarks/cog/siege_results.json
+
+      - name: Push results to gh-benchmarks
+        if: github.event_name == 'push'
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
+        with:
+          repository: gh-benchmarks
+          branch: gh-benchmarks
+          commit_message: "chore: update cog benchmark results"
+          file_pattern: "cog/*.json"
+
       - name: Stop services
         if: always()
         run: docker compose stop
