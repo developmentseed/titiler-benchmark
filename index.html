@@ -194,17 +194,30 @@ async function main() {
   ]);
 
   const meta = document.getElementById('meta');
-  const info = cogBench || mosaicBench;
-  if (info) {
-    const shortSha = info.commit_info.id.slice(0, 7);
-    const date = new Date(info.datetime).toLocaleString();
-    meta.textContent = `Commit ${shortSha} · ${date}`;
-  } else {
-    meta.textContent = 'No benchmark data yet.';
+  try {
+    const info = cogBench || mosaicBench;
+    if (info) {
+      const shortSha = info.commit_info.id.slice(0, 7);
+      const date = new Date(info.datetime).toLocaleString();
+      meta.textContent = `Commit ${shortSha} · ${date}`;
+    } else {
+      meta.textContent = 'No benchmark data yet.';
+    }
+  } catch (e) {
+    meta.textContent = 'Error reading benchmark metadata.';
   }
 
-  renderSection('cog-content', cogBench ? cogBench.benchmarks : null, cogSiege);
-  renderSection('mosaic-content', mosaicBench ? mosaicBench.benchmarks : null, mosaicSiege);
+  try {
+    renderSection('cog-content', cogBench ? cogBench.benchmarks : null, cogSiege);
+  } catch (e) {
+    document.getElementById('cog-content').innerHTML = '<p class="placeholder">Error rendering benchmark data.</p>';
+  }
+
+  try {
+    renderSection('mosaic-content', mosaicBench ? mosaicBench.benchmarks : null, mosaicSiege);
+  } catch (e) {
+    document.getElementById('mosaic-content').innerHTML = '<p class="placeholder">Error rendering benchmark data.</p>';
+  }
 }
 
 main();
