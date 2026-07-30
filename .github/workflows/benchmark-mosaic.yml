@@ -49,8 +49,8 @@ jobs:
       - name: Ingest Stac Items/Collection
         run: |
           uv run pypgstac pgready --dsn postgresql://username:password@0.0.0.0:5439/postgis
-          uv run pypgstac load collections benchmark/stac/collection.json --dsn postgresql://username:password@0.0.0.0:5439/postgis --method upsert
-          uv run pypgstac load items benchmark/stac/items.json --dsn postgresql://username:password@0.0.0.0:5439/postgis --method upsert
+          uv run pypgstac load collections mosaic/stac/collection.json --dsn postgresql://username:password@0.0.0.0:5439/postgis --method upsert
+          uv run pypgstac load items mosaic/stac/items.json --dsn postgresql://username:password@0.0.0.0:5439/postgis --method upsert
 
       - name: Sleep for 10 seconds
         run: sleep 10s
