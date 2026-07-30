@@ -19,8 +19,7 @@ jobs:
   benchmark-mosaic:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Push benchmark results to gh-benchmarks branch
-      pull-requests: write # Leave PR comments when benchmark regressions exceed alert threshold
+      contents: write
     env:
       PGSTAC_VERSION: '0.9.11'
     steps:
@@ -59,7 +58,8 @@ jobs:
       - name: Run Benchmark
         run: |
           uv run pytest ./mosaic/benchmarks.py --benchmark-sort name --benchmark-columns 'min, max, mean, median' --benchmark-json output.json
-
+          cat output.json | jq '.benchmarks[] | {"name": .name, "group": .group, "stats": .stats}' | jq '[inputs]' > benchmark.json
+      
       - name: install siege
         run: |
           sudo apt update
@@ -71,8 +71,7 @@ jobs:
           siege --file ./mosaic/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          echo "Parse Results"
-          cat results.json | jq '{"name": "titiler-pgstac elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "titiler-pgstac concurrency", "unit": "Count", "value": .concurrency}, {"name": "titiler-pgstac response_time", "unit": "s", "value": .response_time}, {"name": "titiler-pgstac transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"name": "titiler-pgstac elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "titiler-pgstac concurrency", "unit": "Count", "value": .concurrency}, {"name": "titiler-pgstac response_time", "unit": "s", "value": .response_time}, {"name": "titiler-pgstac transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
         env:
           PORT: 8080
           HOST: 127.0.0.1
@@ -82,7 +81,6 @@ jobs:
           siege --file ./mosaic/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          echo "Parse Results"
           cat results.json | jq '{"name": "titiler-stacapi elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "titiler-stacapi concurrency", "unit": "Count", "value": .concurrency}, {"name": "titiler-stacapi response_time", "unit": "s", "value": .response_time}, {"name": "titiler-stacapi transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
           PORT: 8081
@@ -101,29 +99,8 @@ jobs:
 
       - name: Merge Outputs
         run: |
-          cat output.json | jq '[inputs]' > benchmark.json
-          cat benchmark.json | jq
+          cat output.json | jq '[inputs]' > siege_results.json
 
       - name: Stop services
         if: always()
         run: docker compose -f docker-compose.mosaic.yml stop
-
-      # - name: Check and Store benchmark result
-      #   if: github.repository == 'developmentseed/titiler-benchmark'
-      #   uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1
-      #   with:
-      #     name: TiTiler Mosaic performance Benchmarks
-      #     tool: 'customSmallerIsBetter'
-      #     output-file-path: benchmark.json
-      #     alert-threshold: '130%'
-      #     # Only comment on alert when we can actually write to the repository.
-      #     # Pull requests from a fork get a read-only GITHUB_TOKEN, so posting the
-      #     # alert comment fails with "Resource not accessible by integration" and
-      #     # takes the whole job down, despite `fail-on-alert: false`.
-      #     comment-on-alert: ${{ github.event.pull_request.head.repo.fork != true }}
-      #     fail-on-alert: false
-      #     # GitHub API token to make a commit comment
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      #     gh-pages-branch: 'gh-benchmarks'
-      #     # Make a commit only if main
-      #     auto-push: ${{ github.ref == 'refs/heads/main' }}
