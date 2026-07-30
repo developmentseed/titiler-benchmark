@@ -21,6 +21,8 @@ def test_benchmark_async_titiler_stacapi(benchmark, tile):
     host = "0.0.0.0"
     port = "8082"
 
+    benchmark.group = tile
+
     def f(input_tile):
         response = httpx.get(
             f"http://{host}:{port}/collections/world/tiles/WebMercatorQuad/{input_tile}?assets=asset"
@@ -40,6 +42,8 @@ def test_benchmark_titiler_stacapi(benchmark, tile):
     host = "0.0.0.0"
     port = "8081"
 
+    benchmark.group = tile
+
     def f(input_tile):
         response = httpx.get(
             f"http://{host}:{port}/collections/world/tiles/WebMercatorQuad/{input_tile}?assets=asset"
@@ -58,6 +62,8 @@ def test_benchmark_titiler_pgstac(benchmark, tile):
     """Benchmark titiler-pgstac."""
     host = "0.0.0.0"
     port = "8080"
+
+    benchmark.group = tile
 
     def f(input_tile):
         response = httpx.get(
