@@ -42,9 +42,10 @@ gh-benchmarks/
 Seeded once with `index.html` + empty `cog/`, `mosaic/` directories in a single
 initial commit to the orphan branch.
 
-## Data shape change: siege_results.json
+## Data shape changes
 
-Current jq output embeds the service name inside `name`:
+**siege_results.json.** Current jq output embeds the service name inside
+`name`:
 
 ```json
 {"name": "titiler elapsed_time", "unit": "s", "value": 87.10}
@@ -59,9 +60,22 @@ label. Change the jq filter in both workflows to split it into two fields:
 
 Applies to all three service blocks in `benchmark-cog.yml` (titiler,
 async-titiler) and all three in `benchmark-mosaic.yml` (titiler-pgstac,
-titiler-stacapi, async-titiler-stacapi). `benchmark.json`'s shape (`name` /
-`group` / `stats`) already separates service (`name`) from bucket (`group`)
-and needs no change.
+titiler-stacapi, async-titiler-stacapi).
+
+**benchmark.json.** Corrected from the original draft: the committed
+`benchmark.json` is *not* the raw pytest-benchmark output — the workflow
+already reduces it to a bare array via
+`jq '.benchmarks[] | {name, group, stats}' | jq '[inputs]'`, which drops
+`commit_info` and `datetime` entirely. Since the report header needs commit
+sha + datetime, change the jq to a single call that wraps the array and keeps
+those two fields:
+
+```bash
+cat output.json | jq '{commit_info: .commit_info, datetime: .datetime, benchmarks: [.benchmarks[] | {name: .name, group: .group, stats: .stats}]}' > benchmark.json
+```
+
+New shape: `{"commit_info": {...}, "datetime": "...", "benchmarks": [{"name", "group", "stats"}, ...]}`.
+This also collapses the existing double-jq-pipe into one call.
 
 ## Workflow changes
 
