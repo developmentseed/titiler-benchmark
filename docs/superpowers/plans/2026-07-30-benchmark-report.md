@@ -401,22 +401,40 @@ git commit -m "fix: split service name into its own field in mosaic siege output
 
 ---
 
-### Task 6: Publish cog results to gh-benchmarks
+### Task 6: Publish cog results to gh-benchmarks — DONE (revised during execution)
 
 **Files:**
 - Modify: `.github/workflows/benchmark-cog.yml`
 
+**Revision note:** the original draft below used
+`stefanzweifel/git-auto-commit-action` for the push step. Code review during
+execution found that action does a single fetch+push with **no real
+retry/rebase-on-conflict** — it doesn't deliver the concurrency safety this
+plan originally claimed. It was replaced with a hand-rolled fetch+rebase+retry
+`run:` step (see "Push results to gh-benchmarks" below), and a workflow-level
+`concurrency:` group was added to close the residual same-workflow race
+entirely. Both changes are already implemented and reviewed on
+`feat/gh-benchmarks-report`; Task 7 (mosaic) should use this same corrected
+pattern from the start rather than repeating the original draft.
+
 Adds three steps after "Merge Outputs" and before "Stop services", gated to
 `push` events only (PR runs, including from forks, must not get write access
-to shared benchmark history).
+to shared benchmark history). Also adds a `concurrency:` group at the
+workflow level so two runs of this same workflow can't race on the same
+`gh-benchmarks/cog/*.json` files.
 
-`stefanzweifel/git-auto-commit-action` is pinned to `4a55954c782fc1ea30b9056cd3e7a2b40ca8887d`
-(tag `v7.2.0`, confirmed against the GitHub API at plan-writing time — resolve
-again if this plan is executed much later and the pin looks stale).
+- [x] **Step 1: Add a concurrency group**
 
-- [ ] **Step 1: Edit the workflow**
+After the `on:` block, before `env:`:
 
-In `.github/workflows/benchmark-cog.yml`, replace:
+```yaml
+concurrency:
+  group: benchmark-cog-${{ github.ref }}
+```
+
+- [x] **Step 2: Edit the workflow — add the publish steps**
+
+Replace:
 
 ```yaml
       - name: Merge Outputs
@@ -451,29 +469,49 @@ with:
 
       - name: Push results to gh-benchmarks
         if: github.event_name == 'push'
-        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
-        with:
-          repository: gh-benchmarks
-          branch: gh-benchmarks
-          commit_message: "chore: update cog benchmark results"
-          file_pattern: "cog/*.json"
+        working-directory: gh-benchmarks
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cog/benchmark.json cog/siege_results.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: update cog benchmark results"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:gh-benchmarks; then
+              echo "Pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt), fetching and rebasing before retry..."
+            sleep $((RANDOM % 5 + 1))
+            git fetch origin gh-benchmarks
+            git rebase origin/gh-benchmarks
+          done
+          echo "Failed to push to gh-benchmarks after 5 attempts"
+          exit 1
 
       - name: Stop services
         if: always()
         run: docker compose stop
 ```
 
-- [ ] **Step 2: Validate YAML syntax**
+No third-party action is used for the push — this removes the need to track
+a SHA pin for `git-auto-commit-action` entirely.
+
+- [x] **Step 3: Validate YAML syntax**
 
 Run: `uv run --with pyyaml python -c "import yaml; yaml.safe_load(open('.github/workflows/benchmark-cog.yml')); print('valid')"`
 Expected: `valid`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 4: Commit**
 
-```bash
-git add .github/workflows/benchmark-cog.yml
-git commit -m "feat: publish cog benchmark results to gh-benchmarks"
-```
+Landed as three commits during execution (concurrency group split out
+separately from the push-step fix for a clean history):
+`f85d5ea` (initial publish steps with the since-replaced action),
+`4e99fc0` (replace action with retry-loop push),
+`63ac1cd` (add concurrency group).
 
 ---
 
@@ -482,7 +520,19 @@ git commit -m "feat: publish cog benchmark results to gh-benchmarks"
 **Files:**
 - Modify: `.github/workflows/benchmark-mosaic.yml`
 
-- [ ] **Step 1: Edit the workflow**
+Use the corrected pattern from Task 6 directly — do not use
+`git-auto-commit-action`.
+
+- [ ] **Step 1: Add a concurrency group**
+
+After the `on:` block, before `env:`:
+
+```yaml
+concurrency:
+  group: benchmark-mosaic-${{ github.ref }}
+```
+
+- [ ] **Step 2: Edit the workflow — add the publish steps**
 
 In `.github/workflows/benchmark-mosaic.yml`, replace:
 
@@ -519,24 +569,40 @@ with:
 
       - name: Push results to gh-benchmarks
         if: github.event_name == 'push'
-        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
-        with:
-          repository: gh-benchmarks
-          branch: gh-benchmarks
-          commit_message: "chore: update mosaic benchmark results"
-          file_pattern: "mosaic/*.json"
+        working-directory: gh-benchmarks
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mosaic/benchmark.json mosaic/siege_results.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: update mosaic benchmark results"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:gh-benchmarks; then
+              echo "Pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt), fetching and rebasing before retry..."
+            sleep $((RANDOM % 5 + 1))
+            git fetch origin gh-benchmarks
+            git rebase origin/gh-benchmarks
+          done
+          echo "Failed to push to gh-benchmarks after 5 attempts"
+          exit 1
 
       - name: Stop services
         if: always()
         run: docker compose -f docker-compose.mosaic.yml stop
 ```
 
-- [ ] **Step 2: Validate YAML syntax**
+- [ ] **Step 3: Validate YAML syntax**
 
 Run: `uv run --with pyyaml python -c "import yaml; yaml.safe_load(open('.github/workflows/benchmark-mosaic.yml')); print('valid')"`
 Expected: `valid`
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add .github/workflows/benchmark-mosaic.yml
@@ -555,18 +621,13 @@ git commit -m "feat: publish mosaic benchmark results to gh-benchmarks"
 `index.html` is authored and committed there directly via a git worktree —
 not through a PR against `main`.
 
-- [ ] **Step 1: Ignore the worktree directory on `main`**
+- [ ] **Step 1: Confirm `.worktrees/` is already ignored**
 
-Edit `.gitignore`, appending:
+Already added to `.gitignore` (commit `a170c48`, done as part of setting up
+the isolated workspace for this plan's own execution). Confirm:
 
-```gitignore
-.worktrees/
-```
-
-```bash
-git add .gitignore
-git commit -m "chore: ignore local git worktrees"
-```
+Run: `git check-ignore -q .worktrees && echo ignored`
+Expected: `ignored`
 
 - [ ] **Step 2: Add the worktree for gh-benchmarks**
 
