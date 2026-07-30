@@ -1,6 +1,4 @@
-"""Benchmark items."""
-
-import os
+"""Benchmark Mosaic Tiles."""
 
 import httpx2 as httpx
 import pytest
