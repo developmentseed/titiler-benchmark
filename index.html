@@ -204,18 +204,21 @@ async function main() {
       meta.textContent = 'No benchmark data yet.';
     }
   } catch (e) {
+    console.error('Failed to read benchmark metadata', e);
     meta.textContent = 'Error reading benchmark metadata.';
   }
 
   try {
     renderSection('cog-content', cogBench ? cogBench.benchmarks : null, cogSiege);
   } catch (e) {
+    console.error('Failed to render cog section', e);
     document.getElementById('cog-content').innerHTML = '<p class="placeholder">Error rendering benchmark data.</p>';
   }
 
   try {
     renderSection('mosaic-content', mosaicBench ? mosaicBench.benchmarks : null, mosaicSiege);
   } catch (e) {
+    console.error('Failed to render mosaic section', e);
     document.getElementById('mosaic-content').innerHTML = '<p class="placeholder">Error rendering benchmark data.</p>';
   }
 }
