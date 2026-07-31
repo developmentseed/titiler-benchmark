@@ -80,7 +80,7 @@ jobs:
 
       - name: Merge Outputs
         run: |
-          cat output.json | jq '[inputs]' > siege_results.json
+          cat output.json | jq -n '[inputs]' > siege_results.json
 
       - name: Checkout gh-benchmarks
         if: github.event_name == 'push'
