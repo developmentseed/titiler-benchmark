@@ -1,3 +1,9 @@
+
+<p align="center">
+  <img width="500" src="img/titiler-benchmark.png"/>
+  <p align="center">Benchmarking TiTiler-based dynamic tiling services.</p>
+</p>
+
 # titiler-benchmark
 
 Benchmarks comparing [TiTiler](https://github.com/developmentseed/titiler)-based dynamic tiling services: request latency (via `pytest-benchmark`) and load/throughput (via `siege`).
