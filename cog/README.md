@@ -7,7 +7,7 @@ docker compose up
 ### Single Tile Benchmark
 
 ```bash
-uv run pytest benchmarks.py --benchmark-columns 'min, max, mean, median' --benchmark-sort name
+uv run pytest ./cog/benchmarks.py --benchmark-sort name --benchmark-columns 'min, max, mean, median'
 ```
 
 ### Siege

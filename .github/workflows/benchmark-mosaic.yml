@@ -12,6 +12,10 @@ on:
       - '.github/workflows/benchmark-mosaic.yml'
 
   pull_request:
+
+concurrency:
+  group: benchmark-mosaic-${{ github.ref }}
+
 env:
   LATEST_PY_VERSION: '3.14'
 
@@ -19,8 +23,7 @@ jobs:
   benchmark-mosaic:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Push benchmark results to gh-benchmarks branch
-      pull-requests: write # Leave PR comments when benchmark regressions exceed alert threshold
+      contents: write
     env:
       PGSTAC_VERSION: '0.9.11'
     steps:
@@ -59,7 +62,8 @@ jobs:
       - name: Run Benchmark
         run: |
           uv run pytest ./mosaic/benchmarks.py --benchmark-sort name --benchmark-columns 'min, max, mean, median' --benchmark-json output.json
-
+          cat output.json | jq '{commit_info: .commit_info, datetime: .datetime, benchmarks: [.benchmarks[] | {name: .name, group: .group, stats: .stats}]}' > benchmark.json
+      
       - name: install siege
         run: |
           sudo apt update
@@ -71,8 +75,7 @@ jobs:
           siege --file ./mosaic/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          echo "Parse Results"
-          cat results.json | jq '{"name": "titiler-pgstac elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "titiler-pgstac concurrency", "unit": "Count", "value": .concurrency}, {"name": "titiler-pgstac response_time", "unit": "s", "value": .response_time}, {"name": "titiler-pgstac transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"service": "titiler-pgstac", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "titiler-pgstac", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "titiler-pgstac", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "titiler-pgstac", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
         env:
           PORT: 8080
           HOST: 127.0.0.1
@@ -82,11 +85,10 @@ jobs:
           siege --file ./mosaic/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          echo "Parse Results"
-          cat results.json | jq '{"name": "titiler-stacapi elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "titiler-stacapi concurrency", "unit": "Count", "value": .concurrency}, {"name": "titiler-stacapi response_time", "unit": "s", "value": .response_time}, {"name": "titiler-stacapi transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"service": "titiler-stacapi", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "titiler-stacapi", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "titiler-stacapi", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "titiler-stacapi", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
           PORT: 8081
-          HOST: 127.0.0.1          
+          HOST: 127.0.0.1
 
       - name: Run siege (async-titiler-stacapi)
         run: |
@@ -94,36 +96,54 @@ jobs:
           echo "Benchmark Results"
           cat results.json | jq
           echo "Parse Results"
-          cat results.json | jq '{"name": "async-titiler-stacapi elapsed_time", "unit": "s", "value": .elapsed_time}, {"name": "async-titiler-stacapi concurrency", "unit": "Count", "value": .concurrency}, {"name": "async-titiler-stacapi response_time", "unit": "s", "value": .response_time}, {"name": "async-titiler-stacapi transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"service": "async-titiler-stacapi", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "async-titiler-stacapi", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "async-titiler-stacapi", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "async-titiler-stacapi", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
           PORT: 8082
-          HOST: 127.0.0.1          
+          HOST: 127.0.0.1
 
       - name: Merge Outputs
         run: |
-          cat output.json | jq '[inputs]' > benchmark.json
-          cat benchmark.json | jq
+          cat output.json | jq '[inputs]' > siege_results.json
+
+      - name: Checkout gh-benchmarks
+        if: github.event_name == 'push'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-benchmarks
+          path: gh-benchmarks
+
+      - name: Copy results into gh-benchmarks/mosaic
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p gh-benchmarks/mosaic
+          cp benchmark.json gh-benchmarks/mosaic/benchmark.json
+          cp siege_results.json gh-benchmarks/mosaic/siege_results.json
+
+      - name: Push results to gh-benchmarks
+        if: github.event_name == 'push'
+        working-directory: gh-benchmarks
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mosaic/benchmark.json mosaic/siege_results.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: update mosaic benchmark results"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:gh-benchmarks; then
+              echo "Pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt), fetching and rebasing before retry..."
+            sleep $((RANDOM % 5 + 1))
+            git fetch origin gh-benchmarks
+            git rebase origin/gh-benchmarks
+          done
+          echo "Failed to push to gh-benchmarks after 5 attempts"
+          exit 1
 
       - name: Stop services
         if: always()
         run: docker compose -f docker-compose.mosaic.yml stop
-
-      # - name: Check and Store benchmark result
-      #   if: github.repository == 'developmentseed/titiler-benchmark'
-      #   uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1
-      #   with:
-      #     name: TiTiler Mosaic performance Benchmarks
-      #     tool: 'customSmallerIsBetter'
-      #     output-file-path: benchmark.json
-      #     alert-threshold: '130%'
-      #     # Only comment on alert when we can actually write to the repository.
-      #     # Pull requests from a fork get a read-only GITHUB_TOKEN, so posting the
-      #     # alert comment fails with "Resource not accessible by integration" and
-      #     # takes the whole job down, despite `fail-on-alert: false`.
-      #     comment-on-alert: ${{ github.event.pull_request.head.repo.fork != true }}
-      #     fail-on-alert: false
-      #     # GitHub API token to make a commit comment
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      #     gh-pages-branch: 'gh-benchmarks'
-      #     # Make a commit only if main
-      #     auto-push: ${{ github.ref == 'refs/heads/main' }}
