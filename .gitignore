@@ -227,3 +227,5 @@ __marimo__/
 /output.json
 /results.json
 /siege_results.json
+
+.claude/
