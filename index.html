@@ -72,6 +72,13 @@ th:first-child, td:first-child { text-align: left; color: var(--text-secondary);
 th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid var(--grid); }
 td { font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--grid); }
 tr:last-child td { border-bottom: none; }
+.about p { margin: 0 0 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.about p:last-child { margin-bottom: 0; }
+.about h3 { font-size: 12px; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+.about dl { margin: 0; font-size: 13px; }
+.about dt { font-weight: 600; color: var(--text-primary); }
+.about dd { margin: 0 0 10px 0; color: var(--text-secondary); }
+.about dd:last-child { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -82,13 +89,38 @@ tr:last-child td { border-bottom: none; }
   </div>
 
   <div class="section">
-    <h2>COG &mdash; single tile latency</h2>
+    <h2>Single COG</h2>
     <div id="cog-content"><p class="placeholder">Loading&hellip;</p></div>
   </div>
 
   <div class="section">
-    <h2>Mosaic &mdash; single tile latency</h2>
+    <h2>Mosaic</h2>
     <div id="mosaic-content"><p class="placeholder">Loading&hellip;</p></div>
+  </div>
+
+  <div class="section about">
+    <h2>About this report</h2>
+    <p>Two things are measured for each service: single-tile request latency via <a href="https://github.com/ionelmc/pytest-benchmark">pytest-benchmark</a>, and load/throughput via <a href="https://www.joedog.org/siege-home/">siege</a> (10 concurrent clients &times; 200 repeats per URL list). Both run against the services in Docker containers on a GitHub Actions runner, so treat absolute numbers as noisy and focus on the relative comparison between services.</p>
+
+    <h3>Metrics</h3>
+    <dl>
+      <dt>Elapsed time (s)</dt>
+      <dd>Total wall-clock time siege took to run the full request list.</dd>
+      <dt>Response time (s)</dt>
+      <dd>Average time between sending a request and receiving the full response.</dd>
+      <dt>Transaction rate (trans/sec)</dt>
+      <dd>Average number of completed requests per second over the run.</dd>
+      <dt>Concurrency</dt>
+      <dd>Average number of simultaneous connections siege observed while the run was in progress.</dd>
+    </dl>
+
+    <h3>Services</h3>
+    <dl>
+      <dt>titiler / async-titiler</dt>
+      <dd>COG scenario &mdash; tiling a single Cloud-Optimized GeoTIFF with <a href="https://github.com/developmentseed/titiler">titiler</a>'s sync stack vs. an async variant.</dd>
+      <dt>titiler-pgstac / titiler-stacapi / async-titiler-stacapi</dt>
+      <dd>Mosaic scenario &mdash; tiling the same STAC-search mosaic, resolving assets either directly from a pgstac database (<code>titiler-pgstac</code>) or through a STAC API (<code>titiler-stacapi</code> sync vs. <code>async-titiler-stacapi</code> async).</dd>
+    </dl>
   </div>
 </div>
 
