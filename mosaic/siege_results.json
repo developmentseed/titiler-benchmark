@@ -3,72 +3,72 @@
     "service": "titiler-pgstac",
     "name": "elapsed_time",
     "unit": "s",
-    "value": 80.07
+    "value": 65.46
   },
   {
     "service": "titiler-pgstac",
     "name": "concurrency",
     "unit": "Count",
-    "value": 7.24
+    "value": 8.15
   },
   {
     "service": "titiler-pgstac",
     "name": "response_time",
     "unit": "s",
-    "value": 0.29
+    "value": 0.27
   },
   {
     "service": "titiler-pgstac",
     "name": "transaction_rate",
     "unit": "trans/sec",
-    "value": 24.98
+    "value": 30.55
   },
   {
     "service": "titiler-stacapi",
     "name": "elapsed_time",
     "unit": "s",
-    "value": 80.37
+    "value": 64.83
   },
   {
     "service": "titiler-stacapi",
     "name": "concurrency",
     "unit": "Count",
-    "value": 7.22
+    "value": 7.77
   },
   {
     "service": "titiler-stacapi",
     "name": "response_time",
     "unit": "s",
-    "value": 0.29
+    "value": 0.25
   },
   {
     "service": "titiler-stacapi",
     "name": "transaction_rate",
     "unit": "trans/sec",
-    "value": 24.88
+    "value": 30.85
   },
   {
     "service": "async-titiler-stacapi",
     "name": "elapsed_time",
     "unit": "s",
-    "value": 104.12
+    "value": 85.93
   },
   {
     "service": "async-titiler-stacapi",
     "name": "concurrency",
     "unit": "Count",
-    "value": 9.68
+    "value": 9.40
   },
   {
     "service": "async-titiler-stacapi",
     "name": "response_time",
     "unit": "s",
-    "value": 0.50
+    "value": 0.40
   },
   {
     "service": "async-titiler-stacapi",
     "name": "transaction_rate",
     "unit": "trans/sec",
-    "value": 19.21
+    "value": 23.27
   }
 ]
