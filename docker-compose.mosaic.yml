@@ -1,6 +1,6 @@
 services:
   titiler-pgstac:
-    image: ghcr.io/stac-utils/titiler-pgstac:latest
+    image: ghcr.io/stac-utils/titiler-pgstac:3.0.2
     ports:
       - "8080:8080"
     environment:
@@ -28,7 +28,7 @@ services:
       - database
 
   titiler-stacapi:
-    image: ghcr.io/developmentseed/titiler-stacapi:latest
+    image: ghcr.io/developmentseed/titiler-stacapi:2.1.0
     ports:
       - "8081:8081"
     environment:
