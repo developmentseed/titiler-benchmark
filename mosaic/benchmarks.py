@@ -68,15 +68,16 @@ def test_benchmark_titiler_pgstac(benchmark, tile):
     benchmark.name = "pgstac"
     benchmark.group = f"Zoom {tile['zoom']} - {tile['assets']} Assets"
 
-    def f(input_tile: dict):
+    info = httpx.get(f"http://{host}:{port}/collections/world/info")
+    search_id = info.json()["search"]["hash"]
+
+    def f(input_tile):
         t = input_tile["tile"]
         response = httpx.get(
-            f"http://{host}:{port}/collections/world/tiles/WebMercatorQuad/{t}?assets=asset"
+            f"http://{host}:{port}/searches/{search_id}/tiles/WebMercatorQuad/{t}?assets=asset"
         )
         assert response.status_code == 200
         return response
-
-    _ = httpx.get(f"http://{host}:{port}/collections/world/info")
 
     response = benchmark(f, tile)
     assert response.status_code == 200

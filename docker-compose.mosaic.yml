@@ -23,6 +23,7 @@ services:
       - PGDATABASE=postgis
       - PGHOST=database
       - PGPORT=5432
+      - TITILER_PGSTAC_CACHE_DISABLE=TRUE
     command: ["uvicorn", "titiler.pgstac.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
     depends_on:
       - database
@@ -46,6 +47,7 @@ services:
       - MOSAIC_CONCURRENCY=5
       - TITILER_STACAPI_API_DEBUG=TRUE
       - TITILER_STACAPI_STAC_API_URL=http://stac-api:8888
+      - TITILER_STACAPI_CACHE_DISABLE=TRUE
     command: ["uvicorn", "titiler.stacapi.main:app", "--host", "0.0.0.0", "--port", "8081", "--workers", "1"]
     depends_on:
       - stac-api
