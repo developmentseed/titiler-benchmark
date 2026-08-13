@@ -1,0 +1,5 @@
+
+
+FROM ghcr.io/eopf-explorer/titiler-eopf:latest
+
+COPY app.py app.py

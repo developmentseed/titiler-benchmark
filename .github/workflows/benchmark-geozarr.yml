@@ -1,0 +1,122 @@
+name: benchmark-geozarr
+
+# On every pull request, but only on push to main
+on:
+  push:
+    branches:
+    - main
+    paths:
+      - 'geozarr/**'
+      - 'docker-compose.geozarr.yml'
+      - 'pyproject.toml'
+      - '.github/workflows/benchmark-geozarr.yml'
+
+  pull_request:
+
+concurrency:
+  group: benchmark-geozarr-${{ github.ref }}
+
+env:
+  LATEST_PY_VERSION: '3.14'
+
+jobs:
+  benchmark-geozarr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      PGSTAC_VERSION: '0.9.11'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.9.*" 
+          enable-cache: false
+          python-version: ${{ env.LATEST_PY_VERSION }}
+     
+      - name: Launch services
+        run: docker compose -f docker-compose.geozarr.yml up -d
+
+      - name: Sleep for 10 seconds
+        run: sleep 10s
+        shell: bash
+
+      - name: Run Benchmark
+        run: |
+          uv run pytest ./geozarr/benchmarks.py --benchmark-sort name --benchmark-columns 'min, max, mean, median' --benchmark-json output.json
+          cat output.json | jq '{commit_info: .commit_info, datetime: .datetime, benchmarks: [.benchmarks[] | {name: .name, group: .group, stats: .stats}]}' > benchmark.json
+      
+      - name: install siege
+        run: |
+          sudo apt update
+          sudo apt install --yes siege jq
+          siege -C
+
+      - name: Run siege (titiler)
+        run: |
+          siege --file ./geozarr/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
+          echo "Benchmark Results"
+          cat results.json | jq
+          cat results.json | jq '{"service": "titiler", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "titiler", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "titiler", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "titiler", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
+        env:
+          PORT: 8080
+          HOST: 127.0.0.1
+
+      - name: Run siege (async-titiler)
+        run: |
+          siege --file ./geozarr/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
+          echo "Benchmark Results"
+          cat results.json | jq
+          cat results.json | jq '{"service": "async-titiler", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "async-titiler", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "async-titiler", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "async-titiler", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+        env:
+          PORT: 8081
+          HOST: 127.0.0.1
+
+      - name: Merge Outputs
+        run: |
+          cat output.json | jq -n '[inputs]' > siege_results.json
+
+      - name: Checkout gh-benchmarks
+        if: github.event_name == 'push'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-benchmarks
+          path: gh-benchmarks
+
+      - name: Copy results into gh-benchmarks/geozarr
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p gh-benchmarks/geozarr
+          cp benchmark.json gh-benchmarks/geozarr/benchmark.json
+          cp siege_results.json gh-benchmarks/geozarr/siege_results.json
+
+      - name: Push results to gh-benchmarks
+        if: github.event_name == 'push'
+        working-directory: gh-benchmarks
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add geozarr/benchmark.json geozarr/siege_results.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: update geozarr benchmark results"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:gh-benchmarks; then
+              echo "Pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt), fetching and rebasing before retry..."
+            sleep $((RANDOM % 5 + 1))
+            git fetch origin gh-benchmarks
+            git rebase origin/gh-benchmarks
+          done
+          echo "Failed to push to gh-benchmarks after 5 attempts"
+          exit 1
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f docker-compose.geozarr.yml stop

@@ -1,0 +1,26 @@
+services:
+  titiler:
+    platform: linux/amd64
+    build:
+      context: ./geozarr/.
+      dockerfile: dockerfile.geozarr
+    ports:
+      - "8080:8080"
+    environment:
+      # TiTiler Config
+      - TITILER_API_DEBUG=TRUE
+      - TITILER_API_NAME=TiTiler GeoZarr
+      # NOT USED, APP will fail to startup without them
+      # Ref: https://github.com/EOPF-Explorer/titiler-eopf/blob/641ff4cdc8425cc31fd86206c3515b375e1b9412/titiler/eopf/dependencies.py#L15
+      - TITILER_EOPF_STORE_SCHEME=s3
+      - TITILER_EOPF_STORE_HOST=esa-zarr-sentinel-explorer-fra
+      - TITILER_EOPF_STORE_PATH=tests-output
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
+
+  async-titiler:
+    image: ghcr.io/developmentseed/async-titiler:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - ATITILER_API_DEBUG=true
+    command: ["uvicorn", "async_titiler.main:app", "--host", "0.0.0.0", "--port", "8081", "--workers", "1"]
