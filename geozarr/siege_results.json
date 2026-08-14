@@ -3,48 +3,48 @@
     "service": "titiler",
     "name": "elapsed_time",
     "unit": "s",
-    "value": 2244.08
+    "value": 1.43
   },
   {
     "service": "titiler",
     "name": "concurrency",
     "unit": "Count",
-    "value": 3.04
+    "value": 9.97
   },
   {
     "service": "titiler",
     "name": "response_time",
     "unit": "s",
-    "value": 3.42
+    "value": 0.01
   },
   {
     "service": "titiler",
     "name": "transaction_rate",
     "unit": "trans/sec",
-    "value": 0.89
+    "value": 1398.60
   },
   {
     "service": "async-titiler",
     "name": "elapsed_time",
     "unit": "s",
-    "value": 84.70
+    "value": 1.40
   },
   {
     "service": "async-titiler",
     "name": "concurrency",
     "unit": "Count",
-    "value": 8.58
+    "value": 9.95
   },
   {
     "service": "async-titiler",
     "name": "response_time",
     "unit": "s",
-    "value": 0.36
+    "value": 0.01
   },
   {
     "service": "async-titiler",
     "name": "transaction_rate",
     "unit": "trans/sec",
-    "value": 23.61
+    "value": 1428.57
   }
 ]
