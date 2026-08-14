@@ -1,5 +1,5 @@
 
 
-FROM ghcr.io/eopf-explorer/titiler-eopf:latest
+FROM ghcr.io/eopf-explorer/titiler-eopf:0.10.1
 
 COPY app.py app.py
