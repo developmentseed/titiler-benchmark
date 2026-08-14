@@ -4,14 +4,15 @@ import httpx2 as httpx
 import pytest
 
 tiles = [
-    {"tile": "10/538/388", "zoom": 10},
-    {"tile": "11/1079/780", "zoom": 11},
-    {"tile": "12/2155/1561", "zoom": 12},
-    {"tile": "13/4308/3126", "zoom": 13},
-    {"tile": "14/8608/6245", "zoom": 14},
+    {"tile": "9/216/195", "zoom": 9},
+    {"tile": "10/432/391", "zoom": 10},
+    {"tile": "11/867/783", "zoom": 11},
+    {"tile": "12/1736/1567", "zoom": 12},
+    {"tile": "13/3475/3136", "zoom": 13},
+    {"tile": "14/6917/6257", "zoom": 14},
 ]
 
-geozarr_path = "https://s3.explorer.eopf.copernicus.eu/esa-zarr-sentinel-explorer-fra/tests-output/sentinel-2-l2a/S2B_MSIL2A_20260522T101019_N0512_R022_T32SNJ_20260522T143353.zarr/measurements/reflectance"
+geozarr_path = "https://s3.explorer.eopf.copernicus.eu/esa-zarr-sentinel-explorer-fra/tests-output/sentinel-2-l2a/S2C_MSIL2A_20260810T125031_N0512_R095_T26SMJ_20260810T155917.zarr/measurements/reflectance"
 
 
 @pytest.mark.parametrize("tile", tiles)
