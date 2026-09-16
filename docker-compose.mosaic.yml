@@ -1,6 +1,6 @@
 services:
   titiler-pgstac:
-    image: ghcr.io/stac-utils/titiler-pgstac:3.0.2
+    image: ghcr.io/stac-utils/titiler-pgstac:3.2.0
     ports:
       - "8080:8080"
     environment:
@@ -29,7 +29,7 @@ services:
       - database
 
   titiler-stacapi:
-    image: ghcr.io/developmentseed/titiler-stacapi:2.1.0
+    image: ghcr.io/developmentseed/titiler-stacapi:2.1.2
     ports:
       - "8081:8081"
     environment:
@@ -64,7 +64,7 @@ services:
       - stac-api
 
   stac-api:
-    image: ghcr.io/stac-utils/stac-fastapi-pgstac:6.3.1
+    image: ghcr.io/stac-utils/stac-fastapi-pgstac:7.0.0
     environment:
       - PGUSER=username
       - PGPASSWORD=password
@@ -77,9 +77,13 @@ services:
       - USE_API_HYDRATE=false
       - ENABLE_TRANSACTIONS_EXTENSIONS=false
       - ENABLE_CATALOGS_EXTENSION=false
+      - STAC_FASTAPI_TITLE=${STAC_FASTAPI_TITLE:-STAC FastAPI PgSTAC}
+      - STAC_FASTAPI_DESCRIPTION=${STAC_FASTAPI_DESCRIPTION:-STAC FastAPI with PGStac Backend}
+      - STAC_FASTAPI_VERSION=${STAC_FASTAPI_VERSION:-6.x}
+      - STAC_FASTAPI_LANDING_ID=${STAC_FASTAPI_LANDING_ID:-stac-fastapi-pgstac-landing}      
     ports:
       - "8888:8888"
-    command: ["uvicorn", "stac_fastapi.pgstac.app:app", "--host", "0.0.0.0", "--port", "8888"]
+    command: ["uvicorn", "stac_fastapi.pgstac.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8888"]
     depends_on:
       database:
         condition: service_healthy
