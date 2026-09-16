@@ -1,6 +1,6 @@
 services:
   titiler:
-    image: ghcr.io/developmentseed/titiler:2.2.1
+    image: ghcr.io/developmentseed/titiler:2.3.0
     ports:
       - "8080:8080"
     environment:
