@@ -70,33 +70,23 @@ jobs:
           sudo apt install --yes siege jq
           siege -C
 
-      - name: Run siege (titiler-pgstac)
+      - name: Run siege (sync)
         run: |
           siege --file ./mosaic/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          cat results.json | jq '{"service": "titiler-pgstac", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "titiler-pgstac", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "titiler-pgstac", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "titiler-pgstac", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
-        env:
-          PORT: 8080
-          HOST: 127.0.0.1
-
-      - name: Run siege (titiler-stacapi)
-        run: |
-          siege --file ./mosaic/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
-          echo "Benchmark Results"
-          cat results.json | jq
-          cat results.json | jq '{"service": "titiler-stacapi", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "titiler-stacapi", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "titiler-stacapi", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "titiler-stacapi", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"service": "sync", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "sync", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "sync", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "sync", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
           PORT: 8081
           HOST: 127.0.0.1
 
-      - name: Run siege (async-titiler-stacapi)
+      - name: Run siege (async)
         run: |
           siege --file ./mosaic/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
           echo "Parse Results"
-          cat results.json | jq '{"service": "async-titiler-stacapi", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "async-titiler-stacapi", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "async-titiler-stacapi", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "async-titiler-stacapi", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"service": "async", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "async", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "async", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "async", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
           PORT: 8082
           HOST: 127.0.0.1

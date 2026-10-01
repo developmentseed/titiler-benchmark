@@ -43,7 +43,7 @@ def test_benchmark_titiler(benchmark, tile):
     host = "0.0.0.0"
     port = "8080"
 
-    benchmark.name = "titiler"
+    benchmark.name = "sync"
     benchmark.group = f"Zoom {tile['zoom']}"
 
     def f(input_tile: dict):

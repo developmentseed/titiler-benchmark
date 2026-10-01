@@ -47,29 +47,34 @@ jobs:
         run: |
           uv run pytest ./geozarr/benchmarks.py --benchmark-sort name --benchmark-columns 'min, max, mean, median' --benchmark-json output.json
           cat output.json | jq '{commit_info: .commit_info, datetime: .datetime, benchmarks: [.benchmarks[] | {name: .name, group: .group, stats: .stats}]}' > benchmark.json
-      
+
+      - name: Run Benchmark COG vs GeoZARR
+        run: |
+          uv run pytest ./geozarr/benchmkar_geozarr_vs_cog.py --benchmark-sort name --benchmark-columns 'min, max, mean, median' --benchmark-json output.json
+          cat output.json | jq '{commit_info: .commit_info, datetime: .datetime, benchmarks: [.benchmarks[] | {name: .name, group: .group, stats: .stats}]}' > benchmark_geozarr_vs_cog.json
+  
       - name: install siege
         run: |
           sudo apt update
           sudo apt install --yes siege jq
           siege -C
 
-      - name: Run siege (titiler)
+      - name: Run siege (sync)
         run: |
           siege --file ./geozarr/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          cat results.json | jq '{"service": "titiler", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "titiler", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "titiler", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "titiler", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
+          cat results.json | jq '{"service": "sync", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "sync", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "sync", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "sync", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
         env:
           PORT: 8080
           HOST: 127.0.0.1
 
-      - name: Run siege (async-titiler)
+      - name: Run siege (async)
         run: |
           siege --file ./geozarr/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
-          cat results.json | jq '{"service": "async-titiler", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "async-titiler", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "async-titiler", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "async-titiler", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
+          cat results.json | jq '{"service": "async", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "async", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "async", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "async", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
           PORT: 8081
           HOST: 127.0.0.1
@@ -90,6 +95,7 @@ jobs:
         run: |
           mkdir -p gh-benchmarks/geozarr
           cp benchmark.json gh-benchmarks/geozarr/benchmark.json
+          cp benchmark_geozarr_vs_cog.json gh-benchmarks/geozarr/benchmark_geozarr_vs_cog.json
           cp siege_results.json gh-benchmarks/geozarr/siege_results.json
 
       - name: Push results to gh-benchmarks
@@ -98,7 +104,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add geozarr/benchmark.json geozarr/siege_results.json
+          git add geozarr/benchmark.json geozarr/benchmark_geozarr_vs_cog.json geozarr/siege_results.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
