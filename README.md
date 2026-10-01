@@ -11,7 +11,8 @@ Benchmarks comparing [TiTiler](https://github.com/developmentseed/titiler)-based
 Two scenarios are covered:
 
 - [`cog/`](cog) — tiling a single Cloud-Optimized GeoTIFF, comparing `titiler` vs `async-titiler`.
-- [`mosaic/`](mosaic) — tiling a mosaic backed by a STAC search, comparing `titiler-pgstac`, `titiler-stacapi`, and `async-titiler-stacapi`.
+- [`mosaic/`](mosaic) — tiling a mosaic backed by a STAC search, comparing `titiler-stacapi`, and `async-titiler-stacapi`.
+- [`geozarr/`](geozarr) — tiling a single GeoZARR (EOPF), comparing `titiler-eopf` vs `async-titiler`.
 
 Each scenario has its own `docker-compose` stack, benchmark suite, and `siege` URL list — see the READMEs in [`cog/`](cog/README.md) and [`mosaic/`](mosaic/README.md) for how to run them locally.
 
