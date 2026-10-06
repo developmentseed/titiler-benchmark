@@ -60,7 +60,7 @@ jobs:
           sudo apt install --yes siege jq
           siege -C
 
-      - name: Run siege (sync)
+      - name: Run siege (sync-xarray)
         run: |
           siege --file ./geozarr/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
@@ -70,7 +70,7 @@ jobs:
           PORT: 8080
           HOST: 127.0.0.1
 
-      - name: Run siege (async)
+      - name: Run siege (async-zarr-python)
         run: |
           siege --file ./geozarr/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"

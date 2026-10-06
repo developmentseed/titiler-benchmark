@@ -1,9 +1,8 @@
 services:
-  titiler-eopf:
+  titiler-xarray:
     platform: linux/amd64
     build:
-      context: ./geozarr/.
-      dockerfile: dockerfile.geozarr
+      context: ./geozarr/xarray
     ports:
       - "8080:8080"
     environment:
@@ -11,6 +10,15 @@ services:
       - TITILER_API_DEBUG=TRUE
       - TITILER_API_NAME=TiTiler GeoZarr
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
+
+  titiler-zarr:
+    platform: linux/amd64
+    build:
+      context: ./geozarr/zarr-python
+    ports:
+      - "8083:8083"
+    command: ["uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "8083", "--workers", "1"]
+
 
   async-titiler:
     image: ghcr.io/developmentseed/async-titiler:latest

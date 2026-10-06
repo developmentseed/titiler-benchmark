@@ -1,0 +1,30 @@
+[project]
+name = "zarr-python-titiler"
+version = "0.1.0"
+description = "TiTiler with pure zarr-python backend"
+authors = [
+  { name = "Vincent Sarago", email = "vincent@developmentseed.org" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "rio-tiler[zarr]==9.4.10",
+    "titiler-core==2.4.0",
+    "starlette-cramjam",
+]
+
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/"]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["src/"]
+
+[project.optional-dependencies]
+server = [
+    "uvicorn[standard]>=0.12.0",
+    "uvicorn-worker",
+    "gunicorn",
+]

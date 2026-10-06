@@ -21,7 +21,7 @@ def test_benchmark_async_titiler(benchmark, tile):
     host = "0.0.0.0"
     port = "8081"
 
-    benchmark.name = "async-geozarr"
+    benchmark.name = "async-geozarr (zarr-python)"
     benchmark.group = f"Zoom {tile['zoom']}"
 
     def f(input_tile: dict):
@@ -38,18 +38,40 @@ def test_benchmark_async_titiler(benchmark, tile):
 
 
 @pytest.mark.parametrize("tile", tiles)
-def test_benchmark_titiler(benchmark, tile):
+def test_benchmark_titiler_eopf(benchmark, tile):
     """Benchmark titiler-eopf."""
     host = "0.0.0.0"
     port = "8080"
 
-    benchmark.name = "sync-geozarr"
+    benchmark.name = "sync-geozarr (xarray)"
     benchmark.group = f"Zoom {tile['zoom']}"
 
     def f(input_tile: dict):
         t = input_tile["tile"]
         response = httpx.get(
             f"http://{host}:{port}/geozarr/tiles/WebMercatorQuad/{t}.png?url={geozarr_path}&variables=b04&rescale=0,1",
+            timeout=30.0,
+        )
+        assert response.status_code == 200
+        return response
+
+    response = benchmark(f, tile)
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize("tile", tiles)
+def test_benchmark_zarr_python_sync(benchmark, tile):
+    """Benchmark titiler with zarr-python sync reader."""
+    host = "0.0.0.0"
+    port = "8083"
+
+    benchmark.name = "sync-geozarr (zarr-python)"
+    benchmark.group = f"Zoom {tile['zoom']}"
+
+    def f(input_tile: dict):
+        t = input_tile["tile"]
+        response = httpx.get(
+            f"http://{host}:{port}/tiles/WebMercatorQuad/{t}.png?url={geozarr_path}&variables=b04&rescale=0,1",
             timeout=30.0,
         )
         assert response.status_code == 200
@@ -65,7 +87,7 @@ def test_benchmark_sync_cog(benchmark, tile):
     host = "0.0.0.0"
     port = "8082"
 
-    benchmark.name = "sync-cog"
+    benchmark.name = "sync-cog (rasterio)"
     benchmark.group = f"Zoom {tile['zoom']}"
 
     def f(input_tile: dict):
@@ -87,7 +109,7 @@ def test_benchmark_async_cog(benchmark, tile):
     host = "0.0.0.0"
     port = "8081"
 
-    benchmark.name = "async-cog"
+    benchmark.name = "async-cog (async-geotiff)"
     benchmark.group = f"Zoom {tile['zoom']}"
 
     def f(input_tile: dict):
