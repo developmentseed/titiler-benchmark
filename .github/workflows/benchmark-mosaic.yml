@@ -12,6 +12,7 @@ on:
       - '.github/workflows/benchmark-mosaic.yml'
 
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: benchmark-mosaic-${{ github.ref }}

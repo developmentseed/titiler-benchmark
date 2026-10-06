@@ -12,6 +12,7 @@ on:
       - '.github/workflows/benchmark-geozarr.yml'
 
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: benchmark-geozarr-${{ github.ref }}
