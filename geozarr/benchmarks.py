@@ -65,7 +65,7 @@ def test_benchmark_titiler_zarr_python(benchmark, tile):
     host = "0.0.0.0"
     port = "8083"
 
-    benchmark.name = "sync (zarr-python)"
+    benchmark.name = "sync"
     benchmark.group = f"Zoom {tile['zoom']}"
 
     def f(input_tile: dict):
