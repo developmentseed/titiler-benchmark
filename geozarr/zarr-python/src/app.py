@@ -1,21 +1,27 @@
 """titiler.eopf Application."""
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from collections.abc import Callable
 from attrs import define
 from fastapi import Depends, FastAPI, Query, Path
 from starlette.middleware.cors import CORSMiddleware
 from starlette_cramjam.middleware import CompressionMiddleware
-from titiler.core.dependencies import DefaultDependency, ImageRenderingParams
+from titiler.core.dependencies import DefaultDependency, ImageRenderingParams, CoordCRSParams
 from titiler.core.factory import BaseFactory
 from titiler.core.resources.enums import ImageType
 from titiler.core.utils import render_image
 from rio_tiler.experimental.zarr import GroupReader
+from rio_tiler.constants import WGS84_CRS
 import zarr
-from starlette.responses import Response
+from starlette.responses import HTMLResponse, Response
+from starlette.requests import Request
 from pydantic import Field
 from morecantile import tms as morecantile_tms
 from morecantile.defaults import TileMatrixSets
+from urllib.parse import urlencode
+from titiler.core.models.mapbox import TileJSON
+from titiler.core.models.responses import Point
+from titiler.core.resources.responses import JSONResponse
 
 from .dependencies import GeoZARRPathParams, VariablesParams
 
@@ -41,6 +47,9 @@ class TilerFactory(BaseFactory):
 
     def register_routes(self):
         self.tile()
+        self.tilejson()
+        self.point()
+        self.map_viewer()
 
     ############################################################################
     # /tiles
@@ -49,7 +58,25 @@ class TilerFactory(BaseFactory):
         """Register /tiles endpoint."""
 
         available_tms = tuple(self.supported_tms.list())
-
+        @self.router.get(
+            "/tiles/{tileMatrixSetId}/{z}/{x}/{y}",
+            operation_id=f"{self.operation_prefix}getTile",
+            responses={
+                200: {
+                    "content": {
+                        "image/png": {},
+                        "image/jpeg": {},
+                        "image/jpg": {},
+                        "image/webp": {},
+                        "image/jp2": {},
+                        "image/tiff; application=geotiff": {},
+                        "application/x-binary": {},
+                    },
+                    "description": "Return an image.",
+                }
+            },
+            response_class=Response,
+        )
         @self.router.get(
             "/tiles/{tileMatrixSetId}/{z}/{x}/{y}.{format}",
             operation_id=f"{self.operation_prefix}getTileWithFormat",
@@ -69,7 +96,7 @@ class TilerFactory(BaseFactory):
             },
             response_class=Response,
         )
-        async def tile(
+        def tile(
             z: Annotated[
                 int,
                 Path(
@@ -127,6 +154,207 @@ class TilerFactory(BaseFactory):
             )
 
             return Response(content, media_type=media_type)
+
+    def tilejson(self):  # noqa: C901
+        """Register /tilejson.json endpoint."""
+
+        @self.router.get(
+            "/{tileMatrixSetId}/tilejson.json",
+            response_model=TileJSON,
+            responses={200: {"description": "Return a tilejson"}},
+            response_model_exclude_none=True,
+            operation_id=f"{self.operation_prefix}getTileJSON",
+        )
+        def tilejson(
+            request: Request,
+            tileMatrixSetId: Annotated[
+                Literal[tuple(self.supported_tms.list())],
+                Path(
+                    description="Identifier selecting one of the TileMatrixSetId supported."
+                ),
+            ],
+            tilesize: Annotated[
+                int | None,
+                Query(gt=0, description="Tilesize in pixels. Default to 512."),
+            ] = 512,
+            tile_format: Annotated[
+                ImageType | None,
+                Query(
+                    description="Default will be automatically defined if the output image needs a mask (png) or not (jpeg).",
+                ),
+            ] = None,
+            minzoom: Annotated[
+                int | None,
+                Query(description="Overwrite default minzoom."),
+            ] = None,
+            maxzoom: Annotated[
+                int | None,
+                Query(description="Overwrite default maxzoom."),
+            ] = None,
+            dataset=Depends(self.path_dependency),
+            layer_params=Depends(self.layer_dependency),
+            render_params=Depends(self.render_dependency),
+        ):
+            """Return TileJSON document for a dataset."""
+            route_params = {
+                "z": "{z}",
+                "x": "{x}",
+                "y": "{y}",
+                "tileMatrixSetId": tileMatrixSetId,
+            }
+            if tile_format:
+                route_params["format"] = tile_format.value
+            tiles_url = self.url_for(request, "tile", **route_params)
+
+            qs_key_to_remove = [
+                "tilematrixsetid",
+                "tile_format",
+                "minzoom",
+                "maxzoom",
+            ]
+            qs: list[tuple[str, Any]] = [
+                (key, value)
+                for (key, value) in request.query_params._list
+                if key.lower() not in qs_key_to_remove
+            ]
+            if "tilesize" not in request.query_params:
+                qs.append(("tilesize", str(tilesize)))
+            tiles_url += f"?{urlencode(qs)}"
+
+            tms = self.supported_tms.get(tileMatrixSetId)
+            with self.reader(dataset, tms=tms) as src_dst:
+                body = {
+                    "bounds": src_dst.get_geographic_bounds(tms.rasterio_geographic_crs),
+                    "minzoom": minzoom if minzoom is not None else src_dst.minzoom,
+                    "maxzoom": maxzoom if maxzoom is not None else src_dst.maxzoom,
+                    "tiles": [tiles_url],
+                    "attribution": "titiler with zarr-python",
+                }
+
+                # Custom TiTiler tilejson fields
+                info = src_dst.info()
+                body["band_descriptions"] = getattr(info, "band_descriptions", None)
+                body["data_type"] = getattr(info, "dtype", None)
+                body["minmax"] = getattr(info, "minmax", None)
+
+            return body
+
+    ############################################################################
+    # /point
+    ############################################################################
+    def point(self):
+        """Register /point endpoints."""
+
+        @self.router.get(
+            "/point/{lon},{lat}",
+            response_model=Point,
+            response_class=JSONResponse,
+            responses={200: {"description": "Return a value for a point"}},
+            operation_id=f"{self.operation_prefix}getDataForPoint",
+        )
+        def point(
+            lon: Annotated[float, Path(description="Longitude")],
+            lat: Annotated[float, Path(description="Latitude")],
+            dataset=Depends(self.path_dependency),
+            coord_crs=Depends(CoordCRSParams),
+            layer_params=Depends(self.layer_dependency),
+        ):
+            """Get Point value for a dataset."""
+            with self.reader(dataset) as src_dst:
+                pts = src_dst.point(
+                    lon,
+                    lat,
+                    coord_crs=coord_crs or WGS84_CRS,
+                    **layer_params.as_dict(),
+                )
+
+            return {
+                "coordinates": [lon, lat],
+                "values": pts.array.tolist(),
+                "band_names": pts.band_names,
+                "band_descriptions": pts.band_descriptions,
+            }
+
+
+    def map_viewer(self):  # noqa: C901
+        """Register /map.html endpoint."""
+
+        @self.router.get(
+            "/{tileMatrixSetId}/map.html",
+            response_class=HTMLResponse,
+            operation_id=f"{self.operation_prefix}getMapViewer",
+        )
+        def map_viewer(
+            request: Request,
+            tileMatrixSetId: Annotated[
+                Literal[tuple(self.supported_tms.list())],
+                Path(
+                    description="Identifier selecting one of the TileMatrixSetId supported."
+                ),
+            ],
+            tile_format: Annotated[
+                ImageType | None,
+                Query(
+                    description="Default will be automatically defined if the output image needs a mask (png) or not (jpeg).",
+                ),
+            ] = None,
+            tilesize: Annotated[
+                int,
+                Query(gt=0, description="Tilesize in pixels. Default to 256."),
+            ] = 256,
+            minzoom: Annotated[
+                int | None,
+                Query(description="Overwrite default minzoom."),
+            ] = None,
+            maxzoom: Annotated[
+                int | None,
+                Query(description="Overwrite default maxzoom."),
+            ] = None,
+            dataset=Depends(self.path_dependency),
+            layer_params=Depends(self.layer_dependency),
+            render_params=Depends(self.render_dependency),
+        ):
+            """Return TileJSON document for a dataset."""
+            tilejson_url = self.url_for(
+                request, "tilejson", tileMatrixSetId=tileMatrixSetId
+            )
+
+            qs = list(request.query_params._list)
+            if "tilesize" not in request.query_params:
+                qs.append(("tilesize", tilesize))
+            tilejson_url += f"?{urlencode(qs)}"
+
+            point_url = self.url_for(request, "point", lon="{lon}", lat="{lat}")
+            if request.query_params._list:
+                qs_key_to_remove = [
+                    "tilesize",
+                    "tile_format",
+                    "minzoom",
+                    "maxzoom",
+                    "buffer",
+                    "padding",
+                    "colormap",
+                    "colormap_name",
+                ]
+                qs = [
+                    (key, value)
+                    for (key, value) in request.query_params._list
+                    if key.lower() not in qs_key_to_remove
+                ]
+                point_url += f"?{urlencode(qs)}"
+
+            tms = self.supported_tms.get(tileMatrixSetId)
+            return self.templates.TemplateResponse(
+                request,
+                name="map.html",
+                context={
+                    "tilejson_endpoint": tilejson_url,
+                    "point_endpoint": point_url,
+                    "tms": tms,
+                    "resolutions": [matrix.cellSize for matrix in tms],
+                },
+                media_type="text/html",
+            )
 
 
 app = FastAPI(
