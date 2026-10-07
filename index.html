@@ -98,23 +98,18 @@ tr:last-child td { border-bottom: none; }
   </div>
 
   <div id="COG"  class="section">
-    <h2>Single COG</h2>
+    <h2>Cloud Optimized GeoTIFF (COG)</h2>
     <div id="cog-content"><p class="placeholder">Loading&hellip;</p></div>
   </div>
-
-  <div id="COG_Mosaic"  class="section">
-    <h2>COG Mosaic</h2>
-    <div id="mosaic-content"><p class="placeholder">Loading&hellip;</p></div>
-  </div>
-
+  
   <div id="GeoZarr" class="section">
     <h2>GeoZARR</h2>
     <div id="geozarr-content"><p class="placeholder">Loading&hellip;</p></div>
   </div>
 
- <div id="GeoZarr_Vs_COG" class="section">
-    <h2>GeoZARR vs COG</h2>
-    <div id="geozarr-vs-cog-content"><p class="placeholder">Loading&hellip;</p></div>
+  <div id="COG_Mosaic"  class="section">
+    <h2>COG Mosaic</h2>
+    <div id="mosaic-content"><p class="placeholder">Loading&hellip;</p></div>
   </div>
 
   <div class="section about">
@@ -135,10 +130,11 @@ tr:last-child td { border-bottom: none; }
 
     <h3>Services</h3>
     <dl>
-      <dd><strong>sync+cog: titiler -</strong> GDAL for I/O and reprojection</dd>
-      <dd><strong>async+cog: async-titiler -</strong> Obstore for I/O, async-geotiff for cog metadata handling and GDAL for reprojection</dd>
-      <dd><strong>sync+geozarr: titiler-eopf -</strong> Obstore for I/O, Xarray for data handling and GDAL for reprojection</dd>
-      <dd><strong>async+geozarr: async-titiler -</strong> Obstore for I/O, zarr-python for data handling and GDAL for reprojection</dd>
+      <dd><strong>COG | sync: titiler -</strong> GDAL for I/O and reprojection</dd>
+      <dd><strong>COG | async: async-titiler -</strong> Obstore for I/O, async-geotiff for cog metadata handling and GDAL for reprojection</dd>
+      <dd><strong>GeoZarr | sync (xarray): titiler-eopf -</strong> Obstore for I/O, Xarray for data handling and GDAL for reprojection</dd>
+      <dd><strong>GeoZarr | sync (zarr-python): custom app -</strong> Obstore for I/O, zarr-python for data handling and GDAL for reprojection</dd>
+      <dd><strong>GeoZarr | async (zarr-python): async-titiler -</strong> Obstore for I/O, zarr-python for data handling and GDAL for reprojection</dd>
       <dd>Mosaic scenario &mdash; tiling the same STAC-search mosaic, resolving assets through a STAC API (<code>titiler-stacapi</code> sync vs. <code>async-titiler-stacapi</code> async).</dd>
     </dl>
   </div>
@@ -310,13 +306,12 @@ function renderSection(containerId, benchmarks, siege) {
 }
 
 async function main() {
-  const [cogBench, cogSiege, mosaicBench, mosaicSiege, geozarrBench, geozarrVsCogBench, geozarrSiege] = await Promise.all([
+  const [cogBench, cogSiege, mosaicBench, mosaicSiege, geozarrBench, geozarrSiege] = await Promise.all([
     fetchJSON('cog/benchmark.json'),
     fetchJSON('cog/siege_results.json'),
     fetchJSON('mosaic/benchmark.json'),
     fetchJSON('mosaic/siege_results.json'),
     fetchJSON('geozarr/benchmark.json'),
-    fetchJSON('geozarr/benchmark_geozarr_vs_cog.json'),
     fetchJSON('geozarr/siege_results.json'),
   ]);
 
@@ -351,11 +346,9 @@ async function main() {
 
   try {
     renderSection('geozarr-content', geozarrBench ? geozarrBench.benchmarks : null, geozarrSiege);
-    renderSection('geozarr-vs-cog-content', geozarrVsCogBench ? geozarrVsCogBench.benchmarks : null, null);
   } catch (e) {
     console.error('Failed to render geozarr section', e);
     document.getElementById('geozarr-content').innerHTML = '<p class="placeholder">Error rendering benchmark data.</p>';
-    document.getElementById('geozarr-vs-cog-content').innerHTML = '<p class="placeholder">Error rendering benchmark data.</p>';
   }
 }
 
