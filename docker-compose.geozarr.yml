@@ -7,7 +7,7 @@ services:
       - "8080:8080"
     environment:
       # TiTiler Config
-      - TITILER_API_DEBUG=TRUE
+      - TITILER_API_DEBUG=FALSE
       - TITILER_API_NAME=TiTiler GeoZarr
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
 
@@ -25,5 +25,5 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - ATITILER_API_DEBUG=true
+      - ATITILER_API_DEBUG=FALSE
     command: ["uvicorn", "async_titiler.main:app", "--host", "0.0.0.0", "--port", "8081", "--workers", "1"]

@@ -16,6 +16,11 @@ geozarr_path = "https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/geoz
 
 
 @pytest.mark.parametrize("tile", tiles)
+@pytest.mark.benchmark(
+    min_rounds=10,
+    warmup=True,
+    warmup_iterations=1
+)
 def test_benchmark_async_titiler(benchmark, tile):
     """Benchmark async-titiler."""
     host = "0.0.0.0"
@@ -38,6 +43,11 @@ def test_benchmark_async_titiler(benchmark, tile):
 
 
 @pytest.mark.parametrize("tile", tiles)
+@pytest.mark.benchmark(
+    min_rounds=10,
+    warmup=True,
+    warmup_iterations=1
+)
 def test_benchmark_titiler_zarr_python(benchmark, tile):
     """Benchmark titiler with zarr-python sync reader."""
     host = "0.0.0.0"
@@ -60,6 +70,11 @@ def test_benchmark_titiler_zarr_python(benchmark, tile):
 
 
 @pytest.mark.parametrize("tile", tiles)
+@pytest.mark.benchmark(
+    min_rounds=10,
+    warmup=True,
+    warmup_iterations=1
+)
 def test_benchmark_titiler_eopf(benchmark, tile):
     """Benchmark titiler-eopf."""
     host = "0.0.0.0"

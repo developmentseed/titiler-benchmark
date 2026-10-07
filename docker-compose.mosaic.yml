@@ -34,18 +34,15 @@ services:
       - "8081:8081"
     environment:
       # GDAL Config
-      - GDAL_CACHEMAX=200
       - GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
       - GDAL_INGESTED_BYTES_AT_OPEN=32768
       - GDAL_HTTP_MERGE_CONSECUTIVE_RANGES=YES
       - GDAL_HTTP_MULTIPLEX=YES
       - GDAL_HTTP_VERSION=2
       - VSI_CACHE=TRUE
-      - VSI_CACHE_SIZE=536870912
-      - CPL_VSIL_CURL_CACHE_SIZE=200000000
       # TiTiler Config
       - MOSAIC_CONCURRENCY=5
-      - TITILER_STACAPI_API_DEBUG=TRUE
+      - TITILER_STACAPI_API_DEBUG=FALSE
       - TITILER_STACAPI_STAC_API_URL=http://stac-api:8888
       - TITILER_STACAPI_CACHE_DISABLE=TRUE
     command: ["uvicorn", "titiler.stacapi.main:app", "--host", "0.0.0.0", "--port", "8081", "--workers", "1"]
@@ -57,7 +54,7 @@ services:
     ports:
       - "8082:8082"
     environment:
-      - ATITILER_API_DEBUG=true
+      - ATITILER_API_DEBUG=FALSE
       - ATITILER_STACAPI_URL=http://stac-api:8888
     command: ["uvicorn", "async_titiler.stac.main:app", "--host", "0.0.0.0", "--port", "8082", "--workers", "1"]
     depends_on:

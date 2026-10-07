@@ -14,6 +14,11 @@ tiles = [
 ]
 
 @pytest.mark.parametrize("tile", tiles)
+@pytest.mark.benchmark(
+    min_rounds=10,
+    warmup=True,
+    warmup_iterations=1
+)
 def test_benchmark_async_titiler_stacapi(benchmark, tile):
     """Benchmark async-titiler-stacapi."""
     host = "0.0.0.0"
@@ -37,6 +42,11 @@ def test_benchmark_async_titiler_stacapi(benchmark, tile):
 
 
 @pytest.mark.parametrize("tile", tiles)
+@pytest.mark.benchmark(
+    min_rounds=10,
+    warmup=True,
+    warmup_iterations=1
+)
 def test_benchmark_titiler_stacapi(benchmark, tile):
     """Benchmark titiler-stacapi."""
     host = "0.0.0.0"
