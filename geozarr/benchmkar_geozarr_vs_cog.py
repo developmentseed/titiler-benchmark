@@ -12,8 +12,8 @@ tiles = [
     {"tile": "14/6917/6257", "zoom": 14},
 ]
 
-geozarr_path = "https://s3.explorer.eopf.copernicus.eu/esa-zarr-sentinel-explorer-fra/tests-output/sentinel-2-l2a/S2C_MSIL2A_20260810T125031_N0512_R095_T26SMJ_20260810T155917.zarr/measurements/reflectance"
-cog_path = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/26/S/MJ/2026/8/S2C_26SMJ_20260810_0_L2A/B04.tif"
+geozarr_path = "https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/geozarrs/S2C_MSIL2A_20260810T125031_N0512_R095_T26SMJ_20260810T155917.zarr/measurements/reflectance"
+cog_path = "https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/cogs/S2C_26SMJ_20260810_0_L2A_B04.tif"
 
 @pytest.mark.parametrize("tile", tiles)
 def test_benchmark_async_titiler(benchmark, tile):

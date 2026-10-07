@@ -28,7 +28,7 @@ def test_benchmark_async_titiler(benchmark, tile):
     def f(input_tile: dict):
         t = input_tile["tile"]
         response = httpx.get(
-            f"http://{host}:{port}/geotiff/tiles/WebMercatorQuad/{t}?url=https://s3.us-east-1.amazonaws.com/ds-deck.gl-raster-public/cog/Annual_NLCD_LndCov_2024_CU_C1V1.tif"
+            f"http://{host}:{port}/geotiff/tiles/WebMercatorQuad/{t}?url=https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/cogs/Annual_NLCD_LndCov_2024_CU_C1V1.tif"
         )
         assert response.status_code == 200
         return response
@@ -49,7 +49,7 @@ def test_benchmark_titiler(benchmark, tile):
     def f(input_tile: dict):
         t = input_tile["tile"]
         response = httpx.get(
-            f"http://{host}:{port}/cog/tiles/WebMercatorQuad/{t}?url=https://s3.us-east-1.amazonaws.com/ds-deck.gl-raster-public/cog/Annual_NLCD_LndCov_2024_CU_C1V1.tif"
+            f"http://{host}:{port}/cog/tiles/WebMercatorQuad/{t}?url=https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/cogs/Annual_NLCD_LndCov_2024_CU_C1V1.tif"
         )
         assert response.status_code == 200
         return response
