@@ -61,9 +61,9 @@ body {
 .s4 { background: var(--s4); }
 .s5 { background: var(--s5); }
 .chart { display: flex; align-items: flex-end; gap: 22px; height: 160px; padding: 24px 4px 0; border-bottom: 1px solid var(--grid); overflow-x: auto; }
-.group { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 40px; height: 100%; justify-content: flex-end; }
-.bars { display: flex; align-items: flex-end; gap: 8px; height: 100%; }
-.bar { width: 20px; border-radius: 4px 4px 0 0; position: relative; }
+.group { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 40px; height: 100%; justify-content: flex-end; }
+.bars { display: flex; align-items: flex-end; justify-content: center; gap: 8px; height: 100%; width: 100%; }
+.bar { flex: 1 1 0; min-width: 12px; max-width: 64px; border-radius: 4px 4px 0 0; position: relative; }
 .bar .val { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-secondary); white-space: nowrap; }
 .bar { cursor: default; }
 .bar:hover, .bar:focus-visible { filter: brightness(1.1); outline: none; }
@@ -110,6 +110,11 @@ tr:last-child td { border-bottom: none; }
   <div id="COG_Mosaic"  class="section">
     <h2>COG Mosaic</h2>
     <div id="mosaic-content"><p class="placeholder">Loading&hellip;</p></div>
+  </div>
+
+  <div id="COG_VS_GeoZarr"  class="section">
+    <h2>Cloud Optimized GeoTIFF vs GeoZARR</h2>
+    <div id="cog-vs-geozarr-content"><p class="placeholder">Loading&hellip;</p></div>
   </div>
 
   <div class="section about">
@@ -350,6 +355,28 @@ async function main() {
     console.error('Failed to render geozarr section', e);
     document.getElementById('geozarr-content').innerHTML = '<p class="placeholder">Error rendering benchmark data.</p>';
   }
+
+  try {
+    // merge cog bench and geozarr bench
+
+    let cog = cogBench?.benchmarks || [];
+    cog = cog.filter(b => b.name == 'sync').map(b => ({ ...b, name: 'cog (rasterio)' }));
+    let geozarr = geozarrBench?.benchmarks || [];
+    geozarr = geozarr.filter(b => b.name == 'sync (zarr-python)').map(b => ({ ...b, name: 'geozarr (zarr-python)' }));
+
+    let bench = {
+      "benchmarks": [
+        ...cog,
+        ...geozarr        
+      ]
+    };
+    console.log(bench);
+    renderSection('cog-vs-geozarr-content', bench.benchmarks, null);
+  } catch (e) {
+    console.error('Failed to render cog/geozarr section', e);
+    document.getElementById('cog-vs-geozarr-content').innerHTML = '<p class="placeholder">Error rendering benchmark data.</p>';
+  }
+
 }
 
 setupTooltip();
