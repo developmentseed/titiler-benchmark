@@ -60,14 +60,14 @@ jobs:
           sudo apt install --yes siege jq
           siege -C
 
-      - name: Run siege (sync-xarray)
+      - name: Run siege (sync-zarr-python)
         run: |
           siege --file ./geozarr/urls.txt -b -c 10 -r 200 --json-output 2>&1 | jq -c > results.json
           echo "Benchmark Results"
           cat results.json | jq
           cat results.json | jq '{"service": "sync", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "sync", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "sync", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "sync", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
         env:
-          PORT: 8080
+          PORT: 8083
           HOST: 127.0.0.1
 
       - name: Run siege (async-zarr-python)
