@@ -23,7 +23,7 @@ def _get_geozarr(url: str) -> zarr.cGroup:
     """Create GeoZarr Group from url"""
     store = HTTPStore(url)
     zarr_store = ObjectStore(store=store, read_only=True)
-    return zarr.open_group(store=zarr_store, mode="r")
+    return zarr.open_group(store=zarr_store, mode="r", zarr_format=3)
 
 
 def GeoZARRPathParams(
