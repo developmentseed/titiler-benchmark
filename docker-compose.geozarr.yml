@@ -27,22 +27,3 @@ services:
     environment:
       - ATITILER_API_DEBUG=true
     command: ["uvicorn", "async_titiler.main:app", "--host", "0.0.0.0", "--port", "8081", "--workers", "1"]
-
-  titiler:
-    image: ghcr.io/developmentseed/titiler:2.3.0
-    ports:
-      - "8082:8082"
-    environment:
-      # GDAL Config
-      - GDAL_CACHEMAX=200
-      - GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
-      - GDAL_INGESTED_BYTES_AT_OPEN=32768
-      - GDAL_HTTP_MERGE_CONSECUTIVE_RANGES=YES
-      - GDAL_HTTP_MULTIPLEX=YES
-      - GDAL_HTTP_VERSION=2
-      - VSI_CACHE=TRUE
-      - VSI_CACHE_SIZE=536870912
-      - CPL_VSIL_CURL_CACHE_SIZE=200000000
-      # TiTiler Config
-      - TITILER_API_DEBUG=TRUE
-    command: ["uvicorn", "titiler.application.main:app", "--host", "0.0.0.0", "--port", "8082", "--workers", "1"]

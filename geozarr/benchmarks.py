@@ -21,7 +21,7 @@ def test_benchmark_async_titiler(benchmark, tile):
     host = "0.0.0.0"
     port = "8081"
 
-    benchmark.name = "async"
+    benchmark.name = "async (zarr-python)"
     benchmark.group = f"Zoom {tile['zoom']}"
 
     def f(input_tile: dict):
@@ -37,35 +37,35 @@ def test_benchmark_async_titiler(benchmark, tile):
     assert response.status_code == 200
 
 
-# @pytest.mark.parametrize("tile", tiles)
-# def test_benchmark_titiler_eopf(benchmark, tile):
-#     """Benchmark titiler-eopf."""
-#     host = "0.0.0.0"
-#     port = "8080"
-
-#     benchmark.name = "sync (xarray)"
-#     benchmark.group = f"Zoom {tile['zoom']}"
-
-#     def f(input_tile: dict):
-#         t = input_tile["tile"]
-#         response = httpx.get(
-#             f"http://{host}:{port}/geozarr/tiles/WebMercatorQuad/{t}.png?url={geozarr_path}&variables=b04&rescale=0,1",
-#             timeout=30.0,
-#         )
-#         assert response.status_code == 200
-#         return response
-
-#     response = benchmark(f, tile)
-#     assert response.status_code == 200
-
-
 @pytest.mark.parametrize("tile", tiles)
 def test_benchmark_titiler_zarr_python(benchmark, tile):
     """Benchmark titiler with zarr-python sync reader."""
     host = "0.0.0.0"
     port = "8083"
 
-    benchmark.name = "sync"
+    benchmark.name = "sync (zarr-python)"
+    benchmark.group = f"Zoom {tile['zoom']}"
+
+    def f(input_tile: dict):
+        t = input_tile["tile"]
+        response = httpx.get(
+            f"http://{host}:{port}/tiles/WebMercatorQuad/{t}.png?url={geozarr_path}&variables=b04&rescale=0,1",
+            timeout=30.0,
+        )
+        assert response.status_code == 200
+        return response
+
+    response = benchmark(f, tile)
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize("tile", tiles)
+def test_benchmark_titiler_eopf(benchmark, tile):
+    """Benchmark titiler-eopf."""
+    host = "0.0.0.0"
+    port = "8080"
+
+    benchmark.name = "sync (xarray)"
     benchmark.group = f"Zoom {tile['zoom']}"
 
     def f(input_tile: dict):

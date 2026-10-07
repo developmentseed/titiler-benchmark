@@ -35,7 +35,7 @@ settings = ApiSettings(_env_prefix="TITILER_API_")
 
 @lru_cache(maxsize=10)
 def open_dataset(src_path: str) -> xarray.DataTree:
-    store = obstore.store.from_url(src_path)
+    store = obstore.store.HTTPStore(src_path)
     zarr_store = ObjectStore(store=store, read_only=True)
     return xarray.open_datatree(
         zarr_store,
@@ -117,10 +117,9 @@ TITILER_CONFORMS_TO = {
 md = TilerFactory(
     path_dependency=DatasetPathParams,
     reader=CustomReader,
-    router_prefix="/geozarr",
     templates=templates,
 )
-app.include_router(md.router, prefix="/geozarr")
+app.include_router(md.router)
 
 TITILER_CONFORMS_TO.update(md.conforms_to)
 
