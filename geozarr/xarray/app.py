@@ -2,6 +2,7 @@
 
 from typing import Annotated, Literal
 
+from collections.abc import Callable
 import jinja2
 from fastapi import FastAPI, Query
 from starlette.middleware.cors import CORSMiddleware
@@ -16,10 +17,71 @@ from titiler.core.resources.enums import MediaType
 from titiler.core.utils import accept_media_type, create_html_response, update_openapi
 from titiler.core.dependencies import DatasetPathParams
 
+from titiler.eopf.reader import GeoZarrReader
+
 from titiler.eopf.factory import TilerFactory
 from titiler.eopf.settings import ApiSettings
 
+import attr
+from functools import lru_cache
+import obstore
+import xarray
+from zarr.storage import ObjectStore
+from rio_tiler.constants import WEB_MERCATOR_TMS
+from morecantile import TileMatrixSet
+
 settings = ApiSettings(_env_prefix="TITILER_API_")
+
+
+@lru_cache(maxsize=10)
+def open_dataset(src_path: str) -> xarray.DataTree:
+    store = obstore.store.from_url(src_path)
+    zarr_store = ObjectStore(store=store, read_only=True)
+    return xarray.open_datatree(
+        zarr_store,
+        decode_times=True,
+        decode_coords="all",
+        create_default_indexes=False,
+        # By default xarray will try to load the consolidated metadata
+        # consolidated=True,
+        # See https://github.com/pydata/xarray/issues/11361
+        # use_zarr_fill_value_as_mask=True,
+        zarr_format=3,
+        engine="zarr",
+    )
+
+
+
+@attr.s
+class CustomReader(GeoZarrReader):
+    """Zarr dataset Reader.
+
+    Attributes:
+        input (str): dataset path.
+        datatree (xarray.DataTree): Xarray datatree.
+        tms (morecantile.TileMatrixSet): TileMatrixSet grid definition. Defaults to `WebMercatorQuad`.
+        opener (Callable): Xarray datatree opener. Defaults to `open_dataset`.
+        opener_options (dict): Options to forward to the opener callable.
+
+    Examples:
+        >>> with GeoZarrReader("geo-zarr-v1",) as src:
+                print(src)
+
+    """
+
+    input: str = attr.ib()
+    datatree: xarray.DataTree = attr.ib(default=None)
+
+    tms: TileMatrixSet = attr.ib(default=WEB_MERCATOR_TMS)
+    minzoom: int = attr.ib(default=None)
+    maxzoom: int = attr.ib(default=None)
+
+    opener: Callable[..., xarray.DataTree] = attr.ib(default=open_dataset)
+    opener_options: dict = attr.ib(factory=dict)
+
+    groups: list[str] = attr.ib(init=False)
+    variables: list[str] = attr.ib(init=False)
+
 
 # HTML templates
 templates = Jinja2Templates(
@@ -54,6 +116,7 @@ TITILER_CONFORMS_TO = {
 
 md = TilerFactory(
     path_dependency=DatasetPathParams,
+    reader=CustomReader,
     router_prefix="/geozarr",
     templates=templates,
 )
