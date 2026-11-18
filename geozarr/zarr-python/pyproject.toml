@@ -7,7 +7,8 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "rio-tiler[zarr]==9.4.10",
+    # "rio-tiler[zarr]==9.4.10",
+    "rio-tiler[geotiff,zarr] @ git+https://github.com/cogeotiff/rio-tiler.git@b673fbb727a25453bc4182a9d2dd9722c4e7f77b",
     "titiler-core==2.4.0",
     "starlette-cramjam",
 ]
@@ -15,6 +16,9 @@ dependencies = [
 [build-system]
 requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.sdist]
 only-include = ["src/"]

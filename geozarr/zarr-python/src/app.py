@@ -23,7 +23,7 @@ from titiler.core.models.mapbox import TileJSON
 from titiler.core.models.responses import Point
 from titiler.core.resources.responses import JSONResponse
 
-from .dependencies import GeoZARRPathParams, VariablesParams
+from .dependencies import GeoZARRPathParams, GeoZarrLayerParams, GeoZarrDatasetParams
 
 @define(kw_only=True)
 class TilerFactory(BaseFactory):
@@ -36,9 +36,11 @@ class TilerFactory(BaseFactory):
     path_dependency: Callable[..., zarr.Group] = GeoZARRPathParams
 
     # Indexes/Expression Dependencies
-    layer_dependency: type[DefaultDependency] = VariablesParams
+    layer_dependency: type[DefaultDependency] = GeoZarrLayerParams
 
     render_dependency: type[DefaultDependency] = ImageRenderingParams
+
+    dataset_dependency: type[DefaultDependency] = GeoZarrDatasetParams
 
     # TileMatrixSet dependency
     supported_tms: TileMatrixSets = morecantile_tms
@@ -133,6 +135,7 @@ class TilerFactory(BaseFactory):
             ] = None,
             dataset=Depends(self.path_dependency),
             layer_params=Depends(self.layer_dependency),
+            dataset_params=Depends(self.dataset_dependency),
             render_params=Depends(self.render_dependency),
         ):
             """Create map tile from a dataset."""
@@ -145,6 +148,7 @@ class TilerFactory(BaseFactory):
                     z,
                     tilesize=tilesize,
                     **layer_params.as_dict(),
+                    **dataset_params.as_dict(),
                 )
 
             content, media_type = self.render_func(
@@ -193,6 +197,7 @@ class TilerFactory(BaseFactory):
             ] = None,
             dataset=Depends(self.path_dependency),
             layer_params=Depends(self.layer_dependency),
+            dataset_params=Depends(self.dataset_dependency),
             render_params=Depends(self.render_dependency),
         ):
             """Return TileJSON document for a dataset."""
@@ -258,6 +263,7 @@ class TilerFactory(BaseFactory):
             dataset=Depends(self.path_dependency),
             coord_crs=Depends(CoordCRSParams),
             layer_params=Depends(self.layer_dependency),
+            dataset_params=Depends(self.dataset_dependency),
         ):
             """Get Point value for a dataset."""
             with self.reader(dataset) as src_dst:
@@ -266,6 +272,7 @@ class TilerFactory(BaseFactory):
                     lat,
                     coord_crs=coord_crs or WGS84_CRS,
                     **layer_params.as_dict(),
+                    **dataset_params.as_dict(),
                 )
 
             return {
@@ -312,6 +319,7 @@ class TilerFactory(BaseFactory):
             ] = None,
             dataset=Depends(self.path_dependency),
             layer_params=Depends(self.layer_dependency),
+            dataset_params=Depends(self.dataset_dependency),
             render_params=Depends(self.render_dependency),
         ):
             """Return TileJSON document for a dataset."""
