@@ -79,6 +79,11 @@ class CustomReader(GeoZarrReader):
     opener: Callable[..., xarray.DataTree] = attr.ib(default=open_dataset)
     opener_options: dict = attr.ib(factory=dict)
 
+    # The datetime of the STAC item that points to this store. A store can
+    # stack several acquisitions on a `time` dimension (e.g. Sentinel-1 RTC),
+    # with one item per acquisition: read the item's own time slice.
+    item_datetime: str | None = attr.ib(default=None)
+
     groups: list[str] = attr.ib(init=False)
     variables: list[str] = attr.ib(init=False)
 
