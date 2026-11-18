@@ -49,6 +49,7 @@ body {
 .report-head { margin-bottom: 20px; }
 .report-head h1 { font-size: 20px; margin: 0 0 4px; }
 .report-head .meta { color: var(--text-secondary); font-size: 13px; }
+.section-meta { color: var(--text-secondary); font-size: 13px; margin: -4px 0 12px; }
 .section { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
 .section h2 { font-size: 15px; margin: 0 0 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); }
 .placeholder { color: var(--muted); font-size: 13px; }
@@ -99,16 +100,19 @@ tr:last-child td { border-bottom: none; }
 
   <div id="COG"  class="section">
     <h2>Cloud Optimized GeoTIFF (COG)</h2>
+    <div class="section-meta" id="cog-meta"></div>
     <div id="cog-content"><p class="placeholder">Loading&hellip;</p></div>
   </div>
   
   <div id="GeoZarr" class="section">
     <h2>GeoZARR</h2>
+    <div class="section-meta" id="geozarr-meta"></div>
     <div id="geozarr-content"><p class="placeholder">Loading&hellip;</p></div>
   </div>
 
   <div id="COG_Mosaic"  class="section">
     <h2>COG Mosaic</h2>
+    <div class="section-meta" id="mosaic-meta"></div>
     <div id="mosaic-content"><p class="placeholder">Loading&hellip;</p></div>
   </div>
 
@@ -322,14 +326,24 @@ async function main() {
 
   const meta = document.getElementById('meta');
   try {
-    const info = cogBench || mosaicBench;
-    if (info) {
-      const shortSha = info.commit_info.id.slice(0, 7);
+    const runs = { cog: cogBench, geozarr: geozarrBench, mosaic: mosaicBench };
+    let latest = null;
+    for (const [key, info] of Object.entries(runs)) {
+      const el = document.getElementById(`${key}-meta`);
+      if (!info || !info.commit_info) {
+        if (el) el.textContent = 'No benchmark data yet.';
+        continue;
+      }
+      const sha = info.commit_info.id;
       const date = new Date(info.datetime).toLocaleString();
-      meta.textContent = `Commit ${shortSha} · ${date}`;
-    } else {
-      meta.textContent = 'No benchmark data yet.';
+      if (el) {
+        el.innerHTML = `Commit <a href="https://github.com/developmentseed/titiler-benchmark/commit/${sha}"><code>${sha.slice(0, 7)}</code></a> · ${date}`;
+      }
+      if (!latest || new Date(info.datetime) > new Date(latest.datetime)) latest = info;
     }
+    meta.textContent = latest
+      ? `Last updated ${new Date(latest.datetime).toLocaleString()}`
+      : 'No benchmark data yet.';
   } catch (e) {
     console.error('Failed to read benchmark metadata', e);
     meta.textContent = 'Error reading benchmark metadata.';
