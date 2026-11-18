@@ -32,7 +32,7 @@ def test_benchmark_async_titiler(benchmark, tile):
     def f(input_tile: dict):
         t = input_tile["tile"]
         response = httpx.get(
-            f"http://{host}:{port}/geotiff/tiles/WebMercatorQuad/{t}?url={cog_path}&rescale=0,1"
+            f"http://{host}:{port}/geotiff/tiles/WebMercatorQuad/{t}?url={cog_path}&rescale=0,1000"
         )
         assert response.status_code == 200
         return response
@@ -58,7 +58,7 @@ def test_benchmark_titiler(benchmark, tile):
     def f(input_tile: dict):
         t = input_tile["tile"]
         response = httpx.get(
-            f"http://{host}:{port}/cog/tiles/WebMercatorQuad/{t}?url={cog_path}&rescale=0,1"
+            f"http://{host}:{port}/cog/tiles/WebMercatorQuad/{t}?url={cog_path}&rescale=0,1000"
         )
         assert response.status_code == 200
         return response

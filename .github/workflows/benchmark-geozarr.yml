@@ -36,7 +36,11 @@ jobs:
           version: "0.9.*" 
           enable-cache: false
           python-version: ${{ env.LATEST_PY_VERSION }}
-     
+
+      - name: Install dependencies
+        run: |
+          uv sync
+
       - name: Launch services
         run: docker compose -f docker-compose.geozarr.yml up -d
 
@@ -62,6 +66,7 @@ jobs:
           cat results.json | jq
           cat results.json | jq '{"service": "sync", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "sync", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "sync", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "sync", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' > output.json
         env:
+          URLPATH: tiles/WebMercatorQuad/
           PORT: 8083
           HOST: 127.0.0.1
 
@@ -72,6 +77,7 @@ jobs:
           cat results.json | jq
           cat results.json | jq '{"service": "async", "name": "elapsed_time", "unit": "s", "value": .elapsed_time}, {"service": "async", "name": "concurrency", "unit": "Count", "value": .concurrency}, {"service": "async", "name": "response_time", "unit": "s", "value": .response_time}, {"service": "async", "name": "transaction_rate", "unit": "trans/sec", "value": .transaction_rate}' >> output.json
         env:
+          URLPATH: geozarr/tiles/WebMercatorQuad/
           PORT: 8081
           HOST: 127.0.0.1
 
