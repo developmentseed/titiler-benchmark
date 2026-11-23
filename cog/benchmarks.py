@@ -4,15 +4,15 @@ import httpx2 as httpx
 import pytest
 
 tiles = [
-    {"tile": "9/216/195", "zoom": 9},
-    {"tile": "10/432/391", "zoom": 10},
-    {"tile": "11/867/783", "zoom": 11},
-    {"tile": "12/1736/1567", "zoom": 12},
-    {"tile": "13/3475/3136", "zoom": 13},
-    {"tile": "14/6917/6257", "zoom": 14},
+    {"tile": "9/276/191", "zoom": 9},
+    {"tile": "10/553/383", "zoom": 10},
+    {"tile": "11/1106/767", "zoom": 11},
+    {"tile": "12/2212/1534", "zoom": 12},
+    {"tile": "13/4424/3069", "zoom": 13},
+    {"tile": "14/8849/6139", "zoom": 14},
 ]
 
-cog_path = "https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/cogs/S2C_26SMJ_20260810_0_L2A_B04.tif"
+cog_path = "https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/cogs/S2C_33TVF_20260928_0_L2A_B04.tif"
 
 
 @pytest.mark.parametrize("tile", tiles)

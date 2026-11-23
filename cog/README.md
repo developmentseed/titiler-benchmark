@@ -17,33 +17,29 @@ uv run pytest ./cog/benchmarks.py --benchmark-sort name --benchmark-columns 'min
 - Get Bounds in WGS84
 
 ```
-uv run --with rasterio rio bounds https://s3.us-east-1.amazonaws.com/ds-deck.gl-raster-public/cog/Annual_NLCD_LndCov_2024_CU_C1V1.tif | jq -c '.bbox'
+uv run --with rasterio rio bounds https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/cogs/S2C_33TVF_20260928_0_L2A_B04.tif | jq -c '.bbox'
 
->>> [-129.27731989810937,21.80509522554448,-63.11842952142922,52.92171973385814]
+>>> [13.800550898371187,40.55670691139613,15.117031634388356,41.55184463910606]
 ```
 - Get Min/Max Zoom
 
 ```
-uv run --with rio-cogeo rio cogeo info https://s3.us-east-1.amazonaws.com/ds-deck.gl-raster-public/cog/Annual_NLCD_LndCov_2024_CU_C1V1.tif --json | jq '.GEO.MinZoom, .GEO.MaxZoom'
-warning: `VIRTUAL_ENV=/Users/vincentsarago/Dev/venv/python3.14` does not match the project environment path `/Users/vincentsarago/Dev/Devseed/titiler-benchmark/.venv` and will be ignored; use `--active` to target the active environment instead
-3
-12
+uv run --with rio-cogeo rio cogeo info https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/cogs/S2C_33TVF_20260928_0_L2A_B04.tif --json | jq '.GEO.MinZoom, .GEO.MaxZoom'
+8
+14
 ```
 
 ###### Create Urls
 
 ```
-uv run ../scripts/create_urls.py --bbox -129.27731989810937,21.80509522554448,-63.11842952142922,52.92171973385814 --minzoom 3 --maxzoom 12
- 3 |   249 ██
- 4 |   332 ██
- 5 |   561 ████
- 6 |   790 █████
- 7 |   852 ██████
- 8 |  1018 ███████
- 9 |  1164 ███████
-10 |  1496 █████████
-11 |  1476 █████████
-12 |  2058 █████████████
+uv run ../scripts/create_urls.py --bbox 13.800550898371187,40.55670691139613,15.117031634388356,41.55184463910606 --minzoom 8 --maxzoom 14
+ 8 |   794 █████
+ 9 |   907 ██████
+10 |  1166 ███████
+11 |  1150 ███████
+12 |  1604 ██████████
+13 |  2188 ██████████████
+14 |  2188 ██████████████
 wrote urls.txt with 10000 requests.
 ```
 
