@@ -3,37 +3,37 @@
     "service": "sync",
     "name": "elapsed_time",
     "unit": "s",
-    "value": 39.03
+    "value": 41.24
   },
   {
     "service": "sync",
     "name": "concurrency",
     "unit": "Count",
-    "value": 9.27
+    "value": 9.51
   },
   {
     "service": "sync",
     "name": "response_time",
     "unit": "s",
-    "value": 0.18
+    "value": 0.20
   },
   {
     "service": "sync",
     "name": "transaction_rate",
     "unit": "trans/sec",
-    "value": 51.24
+    "value": 48.50
   },
   {
     "service": "async",
     "name": "elapsed_time",
     "unit": "s",
-    "value": 51.99
+    "value": 51.51
   },
   {
     "service": "async",
     "name": "concurrency",
     "unit": "Count",
-    "value": 9.60
+    "value": 9.65
   },
   {
     "service": "async",
@@ -45,6 +45,6 @@
     "service": "async",
     "name": "transaction_rate",
     "unit": "trans/sec",
-    "value": 38.47
+    "value": 38.83
   }
 ]
