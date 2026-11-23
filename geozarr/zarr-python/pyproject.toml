@@ -8,7 +8,7 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     # "rio-tiler[zarr]==9.4.10",
-    "rio-tiler[geotiff,zarr] @ git+https://github.com/cogeotiff/rio-tiler.git@b673fbb727a25453bc4182a9d2dd9722c4e7f77b",
+    "rio-tiler[geotiff,zarr] @ git+https://github.com/cogeotiff/rio-tiler.git@79f37cc03b8ec882f4cd4dd993e98bad6c5f1756",
     "titiler-core==2.4.0",
     "starlette-cramjam",
 ]

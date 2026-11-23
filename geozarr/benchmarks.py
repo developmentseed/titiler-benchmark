@@ -4,15 +4,15 @@ import httpx2 as httpx
 import pytest
 
 tiles = [
-    {"tile": "9/216/195", "zoom": 9},
-    {"tile": "10/432/391", "zoom": 10},
-    {"tile": "11/867/783", "zoom": 11},
-    {"tile": "12/1736/1567", "zoom": 12},
-    {"tile": "13/3475/3136", "zoom": 13},
-    {"tile": "14/6917/6257", "zoom": 14},
+    {"tile": "9/276/191", "zoom": 9},
+    {"tile": "10/553/383", "zoom": 10},
+    {"tile": "11/1106/767", "zoom": 11},
+    {"tile": "12/2212/1534", "zoom": 12},
+    {"tile": "13/4424/3069", "zoom": 13},
+    {"tile": "14/8849/6139", "zoom": 14},
 ]
 
-geozarr_path = "https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/geozarrs/S2C_MSIL2A_20260810T125031_N0512_R095_T26SMJ_20260810T155917.zarr/measurements/reflectance"
+geozarr_path = "https://titiler-benchmark-public.s3.us-east-1.amazonaws.com/geozarrs/S2C_MSIL2A_20260928T095031_N0513_R079_T33TVF_20260928T130916.zarr/measurements/reflectance"
 
 
 @pytest.mark.parametrize("tile", tiles)
